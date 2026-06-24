@@ -1,12 +1,16 @@
 'use client';
 
+import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import AuthUI from '@/components/Auth/AuthUI';
-import { Box, Typography, Button, CircularProgress } from '@mui/material';
+import AniListSearch from '@/components/Search/AniListSearch';
+import MediaDetail from '@/components/Media/MediaDetail';
+import { Box, Typography, Button, CircularProgress, AppBar, Toolbar } from '@mui/material';
 import { auth } from '@/lib/firebase';
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const [selectedMediaId, setSelectedMediaId] = useState<number | null>(null);
 
   if (loading) {
     return (
@@ -21,12 +25,28 @@ export default function Home() {
   }
 
   return (
-    <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-      <Typography variant="h3" color="primary" fontWeight="bold">Dashboard</Typography>
-      <Typography variant="body1">Logged in as {user.email}</Typography>
-      <Button variant="outlined" color="secondary" onClick={() => auth.signOut()}>
-        Log Out
-      </Button>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Typography variant="h6" color="primary" fontWeight="bold">
+            AniConstellation
+          </Typography>
+          <Button variant="outlined" color="inherit" onClick={() => auth.signOut()}>
+            Log Out
+          </Button>
+        </Toolbar>
+      </AppBar>
+
+      <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+        {selectedMediaId ? (
+          <MediaDetail 
+            id={selectedMediaId} 
+            onBack={() => setSelectedMediaId(null)} 
+          />
+        ) : (
+          <AniListSearch onSelect={setSelectedMediaId} />
+        )}
+      </Box>
     </Box>
   );
 }
