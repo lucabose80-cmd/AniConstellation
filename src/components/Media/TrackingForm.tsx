@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Slider, CircularProgress, Tabs, Tab, Chip, OutlinedInput } from '@mui/material';
+import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Slider, CircularProgress, Tabs, Tab, Chip, OutlinedInput, Paper, Checkbox } from '@mui/material';
 import { saveTrackingData, getTrackingData, TrackingData } from '@/lib/tracking';
 import { useAuth } from '@/hooks/useAuth';
 
