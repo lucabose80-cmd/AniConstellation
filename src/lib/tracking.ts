@@ -29,6 +29,7 @@ export interface TrackingData {
     romance: number;
     ending: number;
     animation?: number;
+    artstyle?: number;
     emotionalImpact: string; // Highest: "Tränen ausgelöst"
     overallScore: number; // Calculated automatically
   };

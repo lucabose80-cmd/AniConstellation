@@ -18,6 +18,7 @@ import MapIcon from '@mui/icons-material/Map';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { auth } from '@/lib/firebase';
 import { getAllTrackingData, TrackingData } from '@/lib/tracking';
+import { getJikanData } from '@/lib/jikan';
 import { AniListMedia } from '@/lib/anilist';
 
 export default function Home() {
@@ -163,10 +164,26 @@ export default function Home() {
           open={isDiscoveryOpen} 
           onClose={() => setIsDiscoveryOpen(false)} 
           trackedMedia={trackingData}
-          onRecommendationsGenerated={(recs) => {
-            setRecommendations(recs);
-            setSelectedMediaId(null);
-            setIsSearchMode(false);
+          onRecommendationsGenerated={async (recs: AniListMedia[]) => {
+            try {
+              const enrichedRecs = await Promise.all(recs.map(async (rec) => {
+                if (rec.idMal) {
+                  const jData = await getJikanData(rec.idMal, rec.type as 'ANIME' | 'MANGA');
+                  if (jData.germanTitle) {
+                    rec.title.english = jData.germanTitle;
+                  }
+                }
+                return rec;
+              }));
+              setRecommendations(enrichedRecs);
+              setSelectedMediaId(null);
+              setIsSearchMode(false);
+            } catch (e) {
+              console.error(e);
+            } finally {
+              setIsDiscoveryOpen(false);
+              setDataLoading(false);
+            }
           }}
         />
       )}

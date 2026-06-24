@@ -78,12 +78,13 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
   const [evalRomance, setEvalRomance] = useState<number>(5);
   const [evalEnding, setEvalEnding] = useState<number>(5);
   const [evalAnimation, setEvalAnimation] = useState<number>(5);
+  const [evalArtstyle, setEvalArtstyle] = useState<number>(5);
   const [emotionalImpact, setEmotionalImpact] = useState<string>('Keine');
 
   const calculateOverallScore = () => {
     // Weighted average: Story & Characters are most important
-    const total = (evalStory * 1.5) + (evalCharacters * 1.5) + evalSetting + evalRomance + evalEnding + evalAnimation;
-    return Number((total / 7).toFixed(1)); // 1.5+1.5+1+1+1+1 = 7
+    const total = (evalStory * 1.5) + (evalCharacters * 1.5) + evalSetting + evalRomance + evalEnding + evalAnimation + evalArtstyle;
+    return Number((total / 8).toFixed(1)); // 1.5+1.5+1+1+1+1+1 = 8
   };
   const overallScore = calculateOverallScore().toFixed(1);
 
@@ -111,6 +112,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
           setEvalRomance(data.evaluation.romance || 5);
           setEvalEnding(data.evaluation.ending || 5);
           setEvalAnimation(data.evaluation.animation || 5);
+          setEvalArtstyle(data.evaluation.artstyle || 5);
           setEmotionalImpact(data.evaluation.emotionalImpact || 'Keine');
         }
       }
@@ -158,6 +160,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         romance: evalRomance,
         ending: evalEnding,
         animation: evalAnimation,
+        artstyle: evalArtstyle,
         emotionalImpact,
         overallScore: parseFloat(overallScore)
       },
@@ -373,8 +376,11 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         <Typography variant="body1" sx={{ mt: 2 }}>Setting / World-Building</Typography>
         <Slider value={evalSetting} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalSetting(val as number)} />
 
-        <Typography variant="body1" sx={{ mt: 2 }}>Animationsqualität / Zeichenstil</Typography>
+        <Typography variant="body1" sx={{ mt: 2 }}>Animationsqualität</Typography>
         <Slider value={evalAnimation} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalAnimation(val as number)} />
+
+        <Typography variant="body1" sx={{ mt: 2 }}>Artstyle / Zeichenstil</Typography>
+        <Slider value={evalArtstyle} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalArtstyle(val as number)} />
 
         <Typography variant="body1" sx={{ mt: 2 }}>Romance & Chemie</Typography>
         <Slider value={evalRomance} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalRomance(val as number)} />

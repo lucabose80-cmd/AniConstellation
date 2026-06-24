@@ -104,6 +104,19 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           });
           continue; // Skip other similarity checks for counterparts
         }
+        
+        // Franchise / Sequel Link
+        if (dataA && dataB && dataA.type === dataB.type && dataA.title.length > 3 && dataB.title.length > 3) {
+          if (dataA.title.startsWith(dataB.title) || dataB.title.startsWith(dataA.title)) {
+             links.push({
+               source: regularNodes[i].id,
+               target: regularNodes[j].id,
+               label: 'Franchise / Serie',
+               isCounterpart: true // Re-use the dashed yellow line style
+             });
+             continue;
+          }
+        }
 
         let similarity = 0;
         let reasons: string[] = [];
