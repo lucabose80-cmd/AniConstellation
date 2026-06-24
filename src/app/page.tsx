@@ -6,11 +6,14 @@ import AuthUI from '@/components/Auth/AuthUI';
 import AniListSearch from '@/components/Search/AniListSearch';
 import MediaDetail from '@/components/Media/MediaDetail';
 import ConstellationMap from '@/components/Map/ConstellationMap';
+import DiscoveryDialog from '@/components/Discovery/DiscoveryDialog';
 import { Box, Typography, Button, CircularProgress, AppBar, Toolbar, Fab } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MapIcon from '@mui/icons-material/Map';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { auth } from '@/lib/firebase';
 import { getAllTrackingData, TrackingData } from '@/lib/tracking';
+import { AniListMedia } from '@/lib/anilist';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -18,6 +21,9 @@ export default function Home() {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [trackingData, setTrackingData] = useState<TrackingData[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
+  
+  const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false);
+  const [recommendations, setRecommendations] = useState<AniListMedia[]>([]);
 
   const fetchTrackingData = async () => {
     if (user) {
@@ -51,9 +57,20 @@ export default function Home() {
           <Typography variant="h6" color="primary" fontWeight="bold">
             AniConstellation
           </Typography>
-          <Button variant="outlined" color="inherit" onClick={() => auth.signOut()}>
-            Log Out
-          </Button>
+          <Box>
+            <Button 
+              variant="contained" 
+              color="secondary" 
+              startIcon={<AutoAwesomeIcon />}
+              onClick={() => setIsDiscoveryOpen(true)}
+              sx={{ mr: 2, borderRadius: '100px' }}
+            >
+              Discovery
+            </Button>
+            <Button variant="outlined" color="inherit" onClick={() => auth.signOut()}>
+              Log Out
+            </Button>
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -84,6 +101,7 @@ export default function Home() {
             ) : (
               <ConstellationMap 
                 trackingData={trackingData} 
+                recommendations={recommendations}
                 onNodeClick={(id) => setSelectedMediaId(id)} 
               />
             )}
@@ -100,6 +118,19 @@ export default function Home() {
           </Fab>
         )}
       </Box>
+
+      {user && (
+        <DiscoveryDialog 
+          open={isDiscoveryOpen} 
+          onClose={() => setIsDiscoveryOpen(false)} 
+          trackedMedia={trackingData}
+          onRecommendationsGenerated={(recs) => {
+            setRecommendations(recs);
+            setSelectedMediaId(null);
+            setIsSearchMode(false);
+          }}
+        />
+      )}
     </Box>
   );
 }
