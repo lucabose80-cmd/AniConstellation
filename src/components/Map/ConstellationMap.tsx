@@ -190,10 +190,10 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
               sx={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 1, mb: 1 }} 
             />
           )}
-          <Typography variant="subtitle1" fontWeight="bold" noWrap>
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }} noWrap>
             {hoverNode.name}
           </Typography>
-          <Typography variant="body2" color="primary" fontWeight="bold">
+          <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
             Score: {hoverNode.val} / 10
           </Typography>
         </Paper>

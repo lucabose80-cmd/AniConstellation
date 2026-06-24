@@ -29,7 +29,7 @@ export default function AniListSearch({ onSelect }: { onSelect: (id: number) => 
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Typography variant="h4" fontWeight="bold" color="primary" gutterBottom>
+      <Typography variant="h4" sx={{ fontWeight: 'bold' }} color="primary" gutterBottom>
         Discover
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
@@ -46,9 +46,9 @@ export default function AniListSearch({ onSelect }: { onSelect: (id: number) => 
       />
       {loading && <CircularProgress sx={{ display: 'block', mx: 'auto', mb: 2 }} />}
       
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
         {results.map((media) => (
-          <Grid item xs={6} sm={4} md={3} key={media.id}>
+          <Box key={media.id}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardActionArea onClick={() => onSelect(media.id)} sx={{ flexGrow: 1 }}>
                 <CardMedia
@@ -59,7 +59,7 @@ export default function AniListSearch({ onSelect }: { onSelect: (id: number) => 
                   sx={{ objectFit: 'cover' }}
                 />
                 <CardContent>
-                  <Typography variant="subtitle1" fontWeight="bold" noWrap>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }} noWrap>
                     {media.title.romaji}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -68,9 +68,9 @@ export default function AniListSearch({ onSelect }: { onSelect: (id: number) => 
                 </CardContent>
               </CardActionArea>
             </Card>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
     </Box>
   );
 }

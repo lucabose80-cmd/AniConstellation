@@ -5,8 +5,13 @@ import { useAuth } from '@/hooks/useAuth';
 import AuthUI from '@/components/Auth/AuthUI';
 import AniListSearch from '@/components/Search/AniListSearch';
 import MediaDetail from '@/components/Media/MediaDetail';
-import ConstellationMap from '@/components/Map/ConstellationMap';
 import DiscoveryDialog from '@/components/Discovery/DiscoveryDialog';
+import dynamic from 'next/dynamic';
+
+const ConstellationMap = dynamic(() => import('@/components/Map/ConstellationMap'), { 
+  ssr: false, 
+  loading: () => <CircularProgress /> 
+});
 import { Box, Typography, Button, CircularProgress, AppBar, Toolbar, Fab } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MapIcon from '@mui/icons-material/Map';
@@ -54,7 +59,7 @@ export default function Home() {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6" color="primary" fontWeight="bold">
+          <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
             AniConstellation
           </Typography>
           <Box>

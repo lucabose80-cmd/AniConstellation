@@ -150,7 +150,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
   return (
     <Box sx={{ mt: 3, p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-      <Typography variant="h6" gutterBottom fontWeight="bold">Track & Rate</Typography>
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Track & Rate</Typography>
       
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabIndex} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
@@ -178,7 +178,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
         {hasCounterpart && (
           <Box sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom color="primary">
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }} gutterBottom color="primary">
               Adaptation Comparison
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -278,8 +278,8 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         </FormControl>
 
         <Box sx={{ p: 2, bgcolor: 'primary.dark', color: 'primary.contrastText', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="subtitle1" fontWeight="bold">Errechneter Gesamtscore:</Typography>
-          <Typography variant="h5" fontWeight="bold">{overallScore}</Typography>
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Errechneter Gesamtscore:</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{overallScore}</Typography>
         </Box>
       </CustomTabPanel>
 

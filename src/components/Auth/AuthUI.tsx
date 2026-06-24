@@ -34,7 +34,7 @@ export default function AuthUI() {
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', p: 2 }}>
       <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 3, borderRadius: 3 }}>
         <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="primary">
+          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }} color="primary">
             AniConstellation
           </Typography>
           <Typography variant="body1" color="text.secondary">

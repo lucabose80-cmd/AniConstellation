@@ -51,7 +51,7 @@ export default function DiscoveryDialog({ open, onClose, trackedMedia, onRecomme
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle fontWeight="bold" color="primary">Generate Constellations</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 'bold' }} color="primary">Generate Constellations</DialogTitle>
       <DialogContent dividers>
         <Typography variant="body2" color="text.secondary" gutterBottom>
           Select up to 10 of your favorite tracked works. We will analyze their genres and your scores to discover new recommendations for your constellation.

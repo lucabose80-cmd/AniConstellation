@@ -43,7 +43,7 @@ export default function MediaDetail({ id, onBack }: { id: number, onBack: () => 
         />
         
         <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }} gutterBottom>
             {media.title.romaji}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
@@ -57,7 +57,7 @@ export default function MediaDetail({ id, onBack }: { id: number, onBack: () => 
               <Typography variant="subtitle2" color="secondary" gutterBottom>
                 Counterpart exists ({counterpartNode.type})
               </Typography>
-              <Typography variant="body1" fontWeight="bold">
+              <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                 {counterpartNode.title.romaji}
               </Typography>
               <Typography variant="body2" color="text.secondary">
