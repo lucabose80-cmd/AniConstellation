@@ -3,6 +3,8 @@ import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 
 export interface TrackingData {
   mediaId: number;
+  title: string;
+  coverImage: string;
   type: 'ANIME' | 'MANGA';
   status: 'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED';
   adaptationScores?: {
@@ -45,4 +47,16 @@ export async function getTrackingData(userId: string, mediaId: number): Promise<
     return docSnap.data() as TrackingData;
   }
   return null;
+}
+
+import { collection, getDocs } from 'firebase/firestore';
+
+export async function getAllTrackingData(userId: string): Promise<TrackingData[]> {
+  const collRef = collection(db, `users/${userId}/trackedMedia`);
+  const snapshot = await getDocs(collRef);
+  const data: TrackingData[] = [];
+  snapshot.forEach(doc => {
+    data.push(doc.data() as TrackingData);
+  });
+  return data;
 }

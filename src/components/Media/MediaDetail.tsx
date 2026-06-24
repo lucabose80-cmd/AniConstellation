@@ -68,6 +68,8 @@ export default function MediaDetail({ id, onBack }: { id: number, onBack: () => 
 
           <TrackingForm 
             mediaId={media.id} 
+            title={media.title.romaji}
+            coverImage={media.coverImage.large}
             type={media.type} 
             hasCounterpart={hasCounterpart} 
           />

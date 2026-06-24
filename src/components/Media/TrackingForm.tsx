@@ -7,6 +7,8 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface TrackingFormProps {
   mediaId: number;
+  title: string;
+  coverImage: string;
   type: 'ANIME' | 'MANGA';
   hasCounterpart: boolean;
 }
@@ -40,7 +42,7 @@ const CONFESSION_TIMINGS = ["Early", "Middle", "End", "Never", "N/A"];
 const INTIMACY_LEVELS = ["None", "Händchen halten", "Umarmen", "Küssen", "Sex"];
 const EMOTIONAL_IMPACTS = ["Keine", "Leicht", "Mitgenommen", "Tränen ausgelöst"];
 
-export default function TrackingForm({ mediaId, type, hasCounterpart }: TrackingFormProps) {
+export default function TrackingForm({ mediaId, title, coverImage, type, hasCounterpart }: TrackingFormProps) {
   const { user } = useAuth();
   
   // UI State
@@ -108,6 +110,8 @@ export default function TrackingForm({ mediaId, type, hasCounterpart }: Tracking
     
     const data: TrackingData = {
       mediaId,
+      title,
+      coverImage,
       type,
       status,
       classification: {
