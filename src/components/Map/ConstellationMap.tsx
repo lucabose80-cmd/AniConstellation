@@ -36,7 +36,6 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [hoverNode, setHoverNode] = useState<NodeData | null>(null);
-  const [hoverLink, setHoverLink] = useState<LinkData | null>(null);
 
   useEffect(() => {
     if (containerRef.current) {
@@ -258,48 +257,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     if (link.isCounterpart) ctx.setLineDash([5, 5]); // Dashed line for adaptations
     else ctx.setLineDash([]);
     ctx.stroke();
-
-    // Text label in the middle, only if hovered
-    const isHovered = hoverLink && 
-                      ((hoverLink.source as any).id === start.id && (hoverLink.target as any).id === end.id);
-
-    if (link.label && isHovered) {
-      const midX = start.x + (end.x - start.x) / 2;
-      const midY = start.y + (end.y - start.y) / 2;
-      
-      const fontSize = 10;
-      ctx.font = `${fontSize}px Inter, sans-serif`;
-      
-      // Handle multiline text
-      const lines = link.label.split(' \n ');
-      let maxWidth = 0;
-      lines.forEach((line: string) => {
-        const w = ctx.measureText(line).width;
-        if (w > maxWidth) maxWidth = w;
-      });
-      
-      const padding = 6;
-      const bgWidth = maxWidth + padding * 2;
-      const bgHeight = (lines.length * (fontSize + 4)) + padding;
-      
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-      ctx.beginPath();
-      ctx.roundRect(midX - bgWidth / 2, midY - bgHeight / 2, bgWidth, bgHeight, 6);
-      ctx.fill();
-      ctx.strokeStyle = link.isCounterpart ? 'rgba(255, 215, 0, 0.5)' : 'rgba(208, 188, 255, 0.3)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = link.isCounterpart ? '#FFD700' : '#EADDFF';
-      
-      const startY = midY - (lines.length * (fontSize + 4)) / 2 + (fontSize / 2) + 2;
-      lines.forEach((line: string, idx: number) => {
-        ctx.fillText(line, midX, startY + idx * (fontSize + 4));
-      });
-    }
-  }, [hoverLink]);
+  }, []);
 
   return (
     <Box ref={containerRef} sx={{ width: '100%', height: '100%', position: 'relative', background: 'radial-gradient(circle at center, #2B1B54 0%, #0F0A1F 100%)' }}>
@@ -312,7 +270,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           linkCanvasObject={paintLink}
           nodeRelSize={2}
           onNodeHover={(node: any) => setHoverNode(node || null)}
-          onLinkHover={(link: any) => setHoverLink(link || null)}
+          linkLabel={(link: any) => link.label ? `<div style="background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 8px; font-family: Inter, sans-serif; font-size: 12px; color: #fff; text-align: center;">${link.label.replace(/\n/g, '<br/>')}</div>` : ''}
           linkHoverPrecision={10}
           onNodeClick={(node: any) => onNodeClick(parseInt(node.id.toString().replace('rec-', '')))}
           backgroundColor="transparent"
