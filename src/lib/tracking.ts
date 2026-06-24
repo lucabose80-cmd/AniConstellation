@@ -9,6 +9,23 @@ export interface TrackingData {
     storyAdaptation: number;
     pacing: number;
   };
+  classification?: {
+    genres: string[];
+    romanceLevel: string;
+    confessionTiming: string;
+    intimacyLevel: string;
+    wholesomeLewdScale: number; // 1 to 10
+    comedySeriousScale: number; // 1 to 10
+  };
+  evaluation?: {
+    story: number; // 1 to 10
+    characters: number;
+    setting: number;
+    romanceQuality: number;
+    ending: number;
+    emotionalImpact: string; // Highest: "Tränen ausgelöst"
+    overallScore: number; // Calculated automatically
+  };
   updatedAt: number;
 }
 
