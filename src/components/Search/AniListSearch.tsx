@@ -43,12 +43,14 @@ export default function AniListSearch({ onSelect }: AniListSearchProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           sx={{ flexGrow: 1, minWidth: 200 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }
           }}
         />
         <ToggleButtonGroup
