@@ -2,6 +2,7 @@ const ANILIST_API_URL = 'https://graphql.anilist.co';
 
 export interface AniListMedia {
   id: number;
+  idMal?: number;
   title: {
     romaji: string;
     english: string | null;
@@ -61,6 +62,7 @@ export async function getMediaDetails(id: number): Promise<AniListMedia | null> 
     query ($id: Int) {
       Media(id: $id) {
         id
+        idMal
         title {
           romaji
           english

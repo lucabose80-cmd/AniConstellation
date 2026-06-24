@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CardMedia, CircularProgress, Button, Chip, Paper } from '@mui/material';
 import { getMediaDetails, AniListMedia } from '@/lib/anilist';
+import { getGermanTitle } from '@/lib/jikan';
 import TrackingForm from './TrackingForm';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
@@ -17,10 +18,30 @@ export default function MediaDetail({ id, onBack, onNavigate }: MediaDetailProps
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getMediaDetails(id).then((data) => {
-      setMedia(data);
-      setLoading(false);
-    });
+    let active = true;
+    const fetchMedia = async () => {
+      setLoading(true);
+      try {
+        const data = await getMediaDetails(id);
+        if (active && data) {
+          // Attempt to fetch German title
+          if (data.idMal) {
+            const germanTitle = await getGermanTitle(data.idMal, data.type as 'ANIME' | 'MANGA');
+            if (germanTitle) {
+              // Override english title with German title so it displays everywhere
+              data.title.english = germanTitle;
+            }
+          }
+          setMedia(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch media', error);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    fetchMedia();
+    return () => { active = false; };
   }, [id]);
 
   if (loading) return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 4 }} />;

@@ -8,7 +8,7 @@ export interface TrackingData {
   type: 'ANIME' | 'MANGA';
   status: 'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED';
   adaptationScores?: {
-    storyAdaptation: number;
+    story: number;
     pacing: number;
   };
   classification?: {
