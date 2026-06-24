@@ -13,6 +13,7 @@ export interface AniListMedia {
   type: 'ANIME' | 'MANGA';
   format: string;
   status: string;
+  description?: string;
   relations?: {
     edges: Array<{
       relationType: string;

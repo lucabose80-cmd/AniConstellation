@@ -11,6 +11,11 @@ interface TrackingFormProps {
   coverImage: string;
   type: 'ANIME' | 'MANGA';
   hasCounterpart: boolean;
+  counterpart?: {
+    id: number;
+    title: { english?: string | null; romaji: string };
+    type: string;
+  };
 }
 
 interface TabPanelProps {
@@ -42,7 +47,7 @@ const CONFESSION_TIMINGS = ["Early", "Middle", "End", "Never", "N/A"];
 const INTIMACY_LEVELS = ["None", "Händchen halten", "Umarmen", "Küssen", "Sex"];
 const EMOTIONAL_IMPACTS = ["Keine", "Leicht", "Mitgenommen", "Tränen ausgelöst"];
 
-export default function TrackingForm({ mediaId, title, coverImage, type, hasCounterpart }: TrackingFormProps) {
+export default function TrackingForm({ mediaId, title, coverImage, type, hasCounterpart, counterpart }: TrackingFormProps) {
   const { user } = useAuth();
   
   // UI State
@@ -52,6 +57,8 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
   // Status State
   const [status, setStatus] = useState<'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED'>('PLANNING');
+  const [counterpartStatus, setCounterpartStatus] = useState<'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED'>('PLANNING');
+  const [syncCounterpart, setSyncCounterpart] = useState<boolean>(true);
   const [readAdaptation, setReadAdaptation] = useState<boolean>(true);
   const [adaptationScores, setAdaptationScores] = useState({ story: 5, pacing: 5 });
 
@@ -107,6 +114,17 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
     if (!user) return;
     setSaving(true);
     
+    // Generate Classification Summary
+    let summaryStr = '';
+    if (romanceLevel !== 'None' && romanceLevel !== '') {
+      summaryStr += 'Romantischer ';
+    }
+    if (genres.length > 0) {
+      summaryStr += `${genres.slice(0, 2).join('-')}-Titel`;
+    } else {
+      summaryStr += 'Titel';
+    }
+    
     const data: TrackingData = {
       mediaId,
       title,
@@ -118,8 +136,10 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         romanceLevel,
         confessionTiming,
         intimacyLevel,
+        traits: [],
         wholesomeLewdScale,
-        comedySeriousScale
+        comedySeriousScale,
+        summary: summaryStr
       },
       evaluation: {
         story: evalStory,
@@ -133,11 +153,24 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       updatedAt: Date.now()
     };
     
-    if (hasCounterpart && readAdaptation) {
+    if (hasCounterpart && status === 'COMPLETED' && counterpartStatus === 'COMPLETED' && readAdaptation) {
       data.adaptationScores = adaptationScores;
     }
     
     await saveTrackingData(user.uid, data);
+
+    // Save counterpart data if sync is enabled
+    if (hasCounterpart && syncCounterpart && counterpart) {
+      const counterpartData: TrackingData = {
+        ...data,
+        mediaId: counterpart.id,
+        title: counterpart.title.english || counterpart.title.romaji || "",
+        type: counterpart.type as 'ANIME' | 'MANGA',
+        status: counterpartStatus,
+      };
+      await saveTrackingData(user.uid, counterpartData);
+    }
+    
     setSaving(false);
   };
 
@@ -176,21 +209,36 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
             </Select>
           </FormControl>
 
-          {hasCounterpart && (
-            <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          {hasCounterpart && counterpart && (
+            <Box>
+              <FormControl fullWidth>
+                <InputLabel>Status des Pendants</InputLabel>
+                <Select
+                  value={counterpartStatus}
+                  label="Status des Pendants"
+                  onChange={(e) => setCounterpartStatus(e.target.value as any)}
+                >
+                  <MenuItem value="PLANNING">Geplant</MenuItem>
+                  <MenuItem value="CURRENT">Aktuell</MenuItem>
+                  <MenuItem value="COMPLETED">Abgeschlossen</MenuItem>
+                  <MenuItem value="DROPPED">Abgebrochen</MenuItem>
+                </Select>
+              </FormControl>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Checkbox 
-                  checked={readAdaptation} 
-                  onChange={(e) => setReadAdaptation(e.target.checked)} 
+                  checked={syncCounterpart} 
+                  onChange={(e) => setSyncCounterpart(e.target.checked)} 
                   color="primary"
                 />
-                <Typography variant="body1">
-                  Originalmaterial (Pendant) gelesen/gesehen?
+                <Typography variant="body2">
+                  Klassifizierung & Bewertung für das Pendant übernehmen (Erstellt einen zweiten Stern)
                 </Typography>
               </Box>
               
-              {readAdaptation && (
-                <Box sx={{ mt: 2 }}>
+              {(status === 'COMPLETED' || status === 'DROPPED') && 
+               (counterpartStatus === 'COMPLETED' || counterpartStatus === 'DROPPED') && (
+                <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                   <Typography variant="subtitle2" color="primary" gutterBottom>
                     Adaptions-Vergleich
                   </Typography>
@@ -204,7 +252,6 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
                     min={1} max={10} step={1} marks valueLabelDisplay="auto"
                     onChange={(_, val) => setAdaptationScores({...adaptationScores, story: val as number})}
                   />
-                  
                   <Typography variant="body2" sx={{ mt: 1 }}>Pacing (1-10)</Typography>
                   <Slider 
                     value={adaptationScores.pacing} 
@@ -213,8 +260,15 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
                   />
                 </Box>
               )}
-            </Paper>
+            </Box>
           )}
+
+          <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.light', color: 'primary.contrastText', borderRadius: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>Generierte Klassifizierung:</Typography>
+            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+              {`${romanceLevel !== 'None' && romanceLevel !== '' ? 'Romantischer ' : ''}${genres.length > 0 ? genres.slice(0, 2).join('-') : ''}-Titel`}
+            </Typography>
+          </Box>
         </Box>
       </CustomTabPanel>
 

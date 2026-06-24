@@ -26,9 +26,10 @@ interface ConstellationMapProps {
   trackingData: TrackingData[];
   recommendations?: AniListMedia[];
   onNodeClick: (id: number) => void;
+  filterBy: 'GENRES' | 'ROMANCE' | 'RATING' | 'ALL';
 }
 
-export default function ConstellationMap({ trackingData, recommendations = [], onNodeClick }: ConstellationMapProps) {
+export default function ConstellationMap({ trackingData, recommendations = [], onNodeClick, filterBy }: ConstellationMapProps) {
   const [graphData, setGraphData] = useState<{ nodes: NodeData[], links: LinkData[] }>({ nodes: [], links: [] });
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -64,22 +65,26 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
       data: item
     }));
 
-    // Add recommendation nodes pinned to the right
+    // Add recommendation nodes (spawn closer to center in a ring)
+    const centerX = dimensions.width / 2;
+    const centerY = dimensions.height / 2;
     recommendations.forEach((rec, index) => {
+      const angle = (index / recommendations.length) * 2 * Math.PI;
+      const radius = 250;
       nodes.push({
-        id: `rec-${rec.id}`, // prefix to avoid collisions if any
-        name: rec.title.romaji,
+        id: `rec-${rec.id}`,
+        name: rec.title.english || rec.title.romaji,
         img: rec.coverImage.large,
-        val: 8, // Fixed size for recommendations
+        val: 8,
         isRecommendation: true,
-        fx: dimensions.width - 150, // Right side
-        fy: 100 + index * 100 // Stacked vertically
+        fx: centerX + radius * Math.cos(angle),
+        fy: centerY + radius * Math.sin(angle)
       });
     });
 
     const links: LinkData[] = [];
     
-    // Create links for regular nodes
+    // Create links based on filter
     const regularNodes = nodes.filter(n => !n.isRecommendation);
     for (let i = 0; i < regularNodes.length; i++) {
       for (let j = i + 1; j < regularNodes.length; j++) {
@@ -87,15 +92,26 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
         const dataA = regularNodes[i].data;
         const dataB = regularNodes[j].data;
         
-        const genresA = dataA?.classification?.genres || [];
-        const genresB = dataB?.classification?.genres || [];
-        const sharedGenres = genresA.filter(g => genresB.includes(g)).length;
-        if (sharedGenres > 0) similarity += sharedGenres;
+        if (filterBy === 'ALL' || filterBy === 'GENRES') {
+          const genresA = dataA?.classification?.genres || [];
+          const genresB = dataB?.classification?.genres || [];
+          const sharedGenres = genresA.filter(g => genresB.includes(g)).length;
+          if (sharedGenres > 1) similarity += sharedGenres;
+        }
         
-        if (dataA?.classification?.romanceLevel && 
-            dataA.classification.romanceLevel !== 'None' &&
-            dataA.classification.romanceLevel === dataB?.classification?.romanceLevel) {
-          similarity += 2;
+        if (filterBy === 'ALL' || filterBy === 'ROMANCE') {
+          if (dataA?.classification?.romanceLevel && 
+              dataA.classification.romanceLevel !== 'None' &&
+              dataA.classification.romanceLevel === dataB?.classification?.romanceLevel) {
+            similarity += 3;
+          }
+        }
+
+        if (filterBy === 'ALL' || filterBy === 'RATING') {
+          const diff = Math.abs((dataA?.evaluation?.overallScore || 0) - (dataB?.evaluation?.overallScore || 0));
+          if (diff <= 1 && (dataA?.evaluation?.overallScore || 0) > 7) {
+            similarity += 2;
+          }
         }
 
         if (similarity > 1) {
@@ -107,9 +123,8 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
       }
     }
 
-    // Connect recommendations weakly to the center or random existing nodes to keep them "floating" if fx/fy is used they are fixed anyway
     setGraphData({ nodes, links });
-  }, [trackingData, recommendations, dimensions]);
+  }, [trackingData, recommendations, dimensions, filterBy]);
 
   const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
     const size = Math.max(2, node.val);
@@ -141,13 +156,28 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     }
     
     // Draw stroke
-    ctx.strokeStyle = '#381E72';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = node.isRecommendation ? '#FFD700' : '#381E72';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
+
+    // Draw Score
+    const label = node.isRecommendation ? 'NEU' : `${node.val.toFixed(1)}`;
+    const fontSize = size * 0.8;
+    ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // White text with black outline for readability
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.strokeText(label, node.x, node.y);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(label, node.x, node.y);
+
   }, []);
 
   return (
-    <Box ref={containerRef} sx={{ width: '100%', height: '100%', position: 'relative' }}>
+    <Box ref={containerRef} sx={{ width: '100%', height: '100%', position: 'relative', background: 'radial-gradient(circle at center, #2B1B54 0%, #0F0A1F 100%)' }}>
       {graphData.nodes.length > 0 ? (
         <ForceGraph2D
           width={dimensions.width}
@@ -157,8 +187,8 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           nodeRelSize={2}
           onNodeHover={(node: any) => setHoverNode(node || null)}
           onNodeClick={(node: any) => onNodeClick(parseInt(node.id.toString().replace('rec-', '')))}
-          linkColor={() => 'rgba(208, 188, 255, 0.15)'}
-          backgroundColor="#1C1B1F"
+          linkColor={() => 'rgba(208, 188, 255, 0.25)'}
+          backgroundColor="transparent"
           linkDirectionalParticles={2}
           linkDirectionalParticleWidth={1.5}
         />

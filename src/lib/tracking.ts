@@ -16,6 +16,8 @@ export interface TrackingData {
     romanceLevel: string;
     confessionTiming: string;
     intimacyLevel: string;
+    traits: string[];
+    summary?: string;
     wholesomeLewdScale: number; // 1 to 10
     comedySeriousScale: number; // 1 to 10
   };

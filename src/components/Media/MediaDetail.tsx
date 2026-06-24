@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CardMedia, CircularProgress, Button, Chip, Paper } from '@mui/material';
+import { Box, Typography, CardMedia, CircularProgress, Button, Chip, Paper, Divider } from '@mui/material';
 import { getMediaDetails, AniListMedia } from '@/lib/anilist';
-import { getGermanTitle } from '@/lib/jikan';
+import { getJikanData, JikanData } from '@/lib/jikan';
 import TrackingForm from './TrackingForm';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
@@ -15,6 +15,7 @@ interface MediaDetailProps {
 
 export default function MediaDetail({ id, onBack, onNavigate }: MediaDetailProps) {
   const [media, setMedia] = useState<AniListMedia | null>(null);
+  const [jikanMetadata, setJikanMetadata] = useState<JikanData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,13 +25,12 @@ export default function MediaDetail({ id, onBack, onNavigate }: MediaDetailProps
       try {
         const data = await getMediaDetails(id);
         if (active && data) {
-          // Attempt to fetch German title
           if (data.idMal) {
-            const germanTitle = await getGermanTitle(data.idMal, data.type as 'ANIME' | 'MANGA');
-            if (germanTitle) {
-              // Override english title with German title so it displays everywhere
-              data.title.english = germanTitle;
+            const jData = await getJikanData(data.idMal, data.type as 'ANIME' | 'MANGA');
+            if (jData.germanTitle) {
+              data.title.english = jData.germanTitle;
             }
+            setJikanMetadata(jData);
           }
           setMedia(data);
         }
@@ -73,11 +73,29 @@ export default function MediaDetail({ id, onBack, onNavigate }: MediaDetailProps
           <Typography variant="h4" sx={{ fontWeight: 'bold' }} gutterBottom>
             {media.title.english || media.title.romaji}
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+          <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
             <Chip label={media.type} color="primary" size="small" />
             <Chip label={media.status} variant="outlined" size="small" />
             <Chip label={media.format} variant="outlined" size="small" />
+            {jikanMetadata?.score && (
+              <Chip label={`MAL Score: ${jikanMetadata.score} ⭐`} color="secondary" size="small" />
+            )}
           </Box>
+          
+          {(jikanMetadata?.synopsis || media.description) && (
+            <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+              <Typography variant="subtitle2" color="primary" gutterBottom>Kurzbeschreibung</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ 
+                display: '-webkit-box', 
+                WebkitLineClamp: 4, 
+                WebkitBoxOrient: 'vertical', 
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {jikanMetadata?.synopsis || media.description?.replace(/<[^>]*>?/gm, '')}
+              </Typography>
+            </Paper>
+          )}
 
           {counterpart && (
             <Paper 
@@ -102,8 +120,9 @@ export default function MediaDetail({ id, onBack, onNavigate }: MediaDetailProps
             mediaId={media.id} 
             title={media.title.english || media.title.romaji}
             coverImage={media.coverImage.large}
-            type={media.type} 
+            type={media.type as 'ANIME' | 'MANGA'} 
             hasCounterpart={hasCounterpart} 
+            counterpart={counterpart}
           />
         </Box>
       </Box>

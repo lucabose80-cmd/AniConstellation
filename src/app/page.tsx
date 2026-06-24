@@ -12,7 +12,7 @@ const ConstellationMap = dynamic(() => import('@/components/Map/ConstellationMap
   ssr: false, 
   loading: () => <CircularProgress /> 
 });
-import { Box, Typography, Button, CircularProgress, AppBar, Toolbar, Fab } from '@mui/material';
+import { Box, Typography, AppBar, Toolbar, Button, IconButton, CircularProgress, Paper, Select, MenuItem, Fab } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import MapIcon from '@mui/icons-material/Map';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -29,6 +29,7 @@ export default function Home() {
   
   const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false);
   const [recommendations, setRecommendations] = useState<AniListMedia[]>([]);
+  const [mapFilter, setMapFilter] = useState<'GENRES' | 'ROMANCE' | 'RATING' | 'ALL'>('ALL');
 
   const fetchTrackingData = async () => {
     if (user) {
@@ -99,7 +100,38 @@ export default function Home() {
             }} />
           </Box>
         ) : (
-          <Box sx={{ width: '100%', height: '100%' }}>
+          <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
+            {/* Map Controls Panel */}
+            <Paper elevation={4} sx={{ position: 'absolute', top: 16, left: 16, zIndex: 10, p: 2, borderRadius: 2, bgcolor: 'background.paper', width: 250 }}>
+              <Typography variant="subtitle2" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>
+                Konstellations-Filter
+              </Typography>
+              <Select
+                fullWidth
+                size="small"
+                value={mapFilter}
+                onChange={(e) => setMapFilter(e.target.value as any)}
+                sx={{ mb: 2 }}
+              >
+                <MenuItem value="ALL">Alle Verbindungen</MenuItem>
+                <MenuItem value="GENRES">Ähnliche Genres</MenuItem>
+                <MenuItem value="ROMANCE">Gleiches Romance-Level</MenuItem>
+                <MenuItem value="RATING">Ähnliche Top-Bewertung</MenuItem>
+              </Select>
+
+              {recommendations.length > 0 && (
+                <Button 
+                  fullWidth 
+                  variant="outlined" 
+                  color="warning" 
+                  size="small"
+                  onClick={() => setRecommendations([])}
+                >
+                  Empfehlungen ausblenden
+                </Button>
+              )}
+            </Paper>
+
             {dataLoading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                 <CircularProgress />
@@ -109,6 +141,7 @@ export default function Home() {
                 trackingData={trackingData} 
                 recommendations={recommendations}
                 onNodeClick={(id) => setSelectedMediaId(id)} 
+                filterBy={mapFilter}
               />
             )}
           </Box>
