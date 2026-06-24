@@ -20,6 +20,8 @@ interface NodeData {
 interface LinkData {
   source: string;
   target: string;
+  label?: string;
+  isCounterpart?: boolean;
 }
 
 interface ConstellationMapProps {
@@ -88,15 +90,31 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     const regularNodes = nodes.filter(n => !n.isRecommendation);
     for (let i = 0; i < regularNodes.length; i++) {
       for (let j = i + 1; j < regularNodes.length; j++) {
-        let similarity = 0;
         const dataA = regularNodes[i].data;
         const dataB = regularNodes[j].data;
+        
+        // Counterpart Link
+        if (dataA && dataB && dataA.title === dataB.title && dataA.type !== dataB.type) {
+          links.push({
+            source: regularNodes[i].id,
+            target: regularNodes[j].id,
+            label: 'Adaptation',
+            isCounterpart: true
+          });
+          continue; // Skip other similarity checks for counterparts
+        }
+
+        let similarity = 0;
+        let reasons: string[] = [];
         
         if (filterBy === 'ALL' || filterBy === 'GENRES') {
           const genresA = dataA?.classification?.genres || [];
           const genresB = dataB?.classification?.genres || [];
-          const sharedGenres = genresA.filter(g => genresB.includes(g)).length;
-          if (sharedGenres > 1) similarity += sharedGenres;
+          const sharedGenres = genresA.filter(g => genresB.includes(g));
+          if (sharedGenres.length > 1) {
+            similarity += sharedGenres.length;
+            reasons.push(`${sharedGenres.length} Genres`);
+          }
         }
         
         if (filterBy === 'ALL' || filterBy === 'ROMANCE') {
@@ -104,6 +122,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
               dataA.classification.romanceLevel !== 'None' &&
               dataA.classification.romanceLevel === dataB?.classification?.romanceLevel) {
             similarity += 3;
+            reasons.push(dataA.classification.romanceLevel);
           }
         }
 
@@ -111,13 +130,15 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           const diff = Math.abs((dataA?.evaluation?.overallScore || 0) - (dataB?.evaluation?.overallScore || 0));
           if (diff <= 1 && (dataA?.evaluation?.overallScore || 0) > 7) {
             similarity += 2;
+            reasons.push('Top-Tier');
           }
         }
 
         if (similarity > 1) {
           links.push({
             source: regularNodes[i].id,
-            target: regularNodes[j].id
+            target: regularNodes[j].id,
+            label: reasons.join(' & ')
           });
         }
       }
@@ -126,54 +147,121 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     setGraphData({ nodes, links });
   }, [trackingData, recommendations, dimensions, filterBy]);
 
+  // Helper to draw a 5-point star
+  const drawStar = (ctx: CanvasRenderingContext2D, cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number) => {
+    let rot = Math.PI / 2 * 3;
+    let x = cx;
+    let y = cy;
+    let step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+      x = cx + Math.cos(rot) * outerRadius;
+      y = cy + Math.sin(rot) * outerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+
+      x = cx + Math.cos(rot) * innerRadius;
+      y = cy + Math.sin(rot) * innerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+    }
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+  };
+
   const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
-    const size = Math.max(2, node.val);
+    const size = Math.max(3, node.val);
+    const outerRadius = size * 1.5;
+    const innerRadius = size * 0.7;
     
+    // Draw Glow
     if (node.isRecommendation) {
-      // Draw golden glow
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, size * 2, 0, 2 * Math.PI, false);
-      ctx.fillStyle = `rgba(255, 215, 0, 0.4)`; // Gold
+      drawStar(ctx, node.x, node.y, 5, outerRadius * 1.8, innerRadius * 1.8);
+      ctx.fillStyle = `rgba(255, 215, 0, 0.4)`; // Gold glow
       ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
-      ctx.fillStyle = '#FFD700'; // Gold center
-      ctx.fill();
-    } else {
-      // Draw standard glow for high scores
-      if (node.val > 7) {
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, size * 2, 0, 2 * Math.PI, false);
-        ctx.fillStyle = `rgba(208, 188, 255, ${Math.min(0.8, (node.val - 6) * 0.15)})`;
-        ctx.fill();
-      }
-
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
-      ctx.fillStyle = '#D0BCFF'; // Primary MD3 color
+    } else if (node.val > 7) {
+      drawStar(ctx, node.x, node.y, 5, outerRadius * 1.8, innerRadius * 1.8);
+      ctx.fillStyle = `rgba(255, 215, 0, ${Math.min(0.6, (node.val - 6) * 0.15)})`;
       ctx.fill();
     }
+
+    // Draw Star Base
+    drawStar(ctx, node.x, node.y, 5, outerRadius, innerRadius);
+    ctx.fillStyle = '#FFD700'; // Gold center
+    ctx.fill();
     
     // Draw stroke
-    ctx.strokeStyle = node.isRecommendation ? '#FFD700' : '#381E72';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = node.isRecommendation ? '#FFF' : '#B8860B';
+    ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Draw Score
+    // Draw Score Badge Below Star
     const label = node.isRecommendation ? 'NEU' : `${node.val.toFixed(1)}`;
-    const fontSize = size * 0.8;
+    const fontSize = Math.max(8, size * 0.9);
     ctx.font = `bold ${fontSize}px Inter, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    const textWidth = ctx.measureText(label).width;
     
-    // White text with black outline for readability
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-    ctx.lineWidth = 2;
-    ctx.strokeText(label, node.x, node.y);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillText(label, node.x, node.y);
+    // Background Pill
+    const paddingX = 4;
+    const paddingY = 2;
+    const badgeY = node.y + outerRadius + 2;
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.beginPath();
+    ctx.roundRect(
+      node.x - textWidth / 2 - paddingX, 
+      badgeY, 
+      textWidth + paddingX * 2, 
+      fontSize + paddingY * 2,
+      4
+    );
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
+    // Text
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(label, node.x, badgeY + paddingY + 1);
+
+  }, []);
+
+  const paintLink = useCallback((link: any, ctx: CanvasRenderingContext2D) => {
+    const start = link.source;
+    const end = link.target;
+    if (typeof start !== 'object' || typeof end !== 'object') return;
+
+    // Line drawing
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.strokeStyle = link.isCounterpart ? 'rgba(255, 215, 0, 0.8)' : 'rgba(208, 188, 255, 0.25)';
+    ctx.lineWidth = link.isCounterpart ? 2 : 1;
+    if (link.isCounterpart) ctx.setLineDash([5, 5]); // Dashed line for adaptations
+    else ctx.setLineDash([]);
+    ctx.stroke();
+
+    // Text label in the middle
+    if (link.label) {
+      const midX = start.x + (end.x - start.x) / 2;
+      const midY = start.y + (end.y - start.y) / 2;
+      
+      const fontSize = 8;
+      ctx.font = `${fontSize}px Inter, sans-serif`;
+      const textWidth = ctx.measureText(link.label).width;
+      
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(midX - textWidth / 2 - 2, midY - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
+      
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = link.isCounterpart ? '#FFD700' : '#D0BCFF';
+      ctx.fillText(link.label, midX, midY);
+    }
   }, []);
 
   return (
@@ -184,12 +272,12 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           height={dimensions.height}
           graphData={graphData}
           nodeCanvasObject={paintNode}
+          linkCanvasObject={paintLink}
           nodeRelSize={2}
           onNodeHover={(node: any) => setHoverNode(node || null)}
           onNodeClick={(node: any) => onNodeClick(parseInt(node.id.toString().replace('rec-', '')))}
-          linkColor={() => 'rgba(208, 188, 255, 0.25)'}
           backgroundColor="transparent"
-          linkDirectionalParticles={2}
+          linkDirectionalParticles={0}
           linkDirectionalParticleWidth={1.5}
         />
       ) : (

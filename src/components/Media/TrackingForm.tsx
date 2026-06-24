@@ -119,8 +119,9 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
     if (romanceLevel !== 'None' && romanceLevel !== '') {
       summaryStr += 'Romantischer ';
     }
-    if (genres.length > 0) {
-      summaryStr += `${genres.slice(0, 2).join('-')}-Titel`;
+    const filteredGenres = genres.filter(g => g !== 'Romance');
+    if (filteredGenres.length > 0) {
+      summaryStr += `${filteredGenres.slice(0, 2).join('-')}-Titel`;
     } else {
       summaryStr += 'Titel';
     }
@@ -266,7 +267,19 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
           <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.light', color: 'primary.contrastText', borderRadius: 2 }}>
             <Typography variant="subtitle2" gutterBottom>Generierte Klassifizierung:</Typography>
             <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-              {`${romanceLevel !== 'None' && romanceLevel !== '' ? 'Romantischer ' : ''}${genres.length > 0 ? genres.slice(0, 2).join('-') : ''}-Titel`}
+              {(() => {
+                let summaryStr = '';
+                if (romanceLevel !== 'None' && romanceLevel !== '') {
+                  summaryStr += 'Romantischer ';
+                }
+                const filteredGenres = genres.filter(g => g !== 'Romance');
+                if (filteredGenres.length > 0) {
+                  summaryStr += `${filteredGenres.slice(0, 2).join('-')}-Titel`;
+                } else {
+                  summaryStr += 'Titel';
+                }
+                return summaryStr;
+              })()}
             </Typography>
           </Box>
         </Box>
