@@ -194,7 +194,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
                   <Typography variant="subtitle2" color="primary" gutterBottom>
                     Adaptions-Vergleich
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} gutterBottom>
                     Wie gut wurde das Originalmaterial adaptiert?
                   </Typography>
                   
