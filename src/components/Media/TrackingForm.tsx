@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Slider, CircularProgress, Tabs, Tab, Chip, OutlinedInput, Paper, Checkbox } from '@mui/material';
+import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Slider, CircularProgress, Tabs, Tab, Chip, OutlinedInput, Paper, Checkbox, TextField } from '@mui/material';
 import { saveTrackingData, getTrackingData, TrackingData } from '@/lib/tracking';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -67,19 +67,25 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
   const [romanceLevel, setRomanceLevel] = useState<string>('None');
   const [confessionTiming, setConfessionTiming] = useState<string>('N/A');
   const [intimacyLevel, setIntimacyLevel] = useState<string>('None');
+  const [lengthStr, setLengthStr] = useState<string>('');
   const [wholesomeLewdScale, setWholesomeLewdScale] = useState<number>(5);
   const [comedySeriousScale, setComedySeriousScale] = useState<number>(5);
 
-  // Evaluation State
+  // Qualitative State (1-10)
   const [evalStory, setEvalStory] = useState<number>(5);
   const [evalCharacters, setEvalCharacters] = useState<number>(5);
   const [evalSetting, setEvalSetting] = useState<number>(5);
   const [evalRomance, setEvalRomance] = useState<number>(5);
   const [evalEnding, setEvalEnding] = useState<number>(5);
+  const [evalAnimation, setEvalAnimation] = useState<number>(5);
   const [emotionalImpact, setEmotionalImpact] = useState<string>('Keine');
 
-  // Overall Score Calculation
-  const overallScore = ((evalStory + evalCharacters + evalSetting + evalRomance + evalEnding) / 5).toFixed(1);
+  const calculateOverallScore = () => {
+    // Weighted average: Story & Characters are most important
+    const total = (evalStory * 1.5) + (evalCharacters * 1.5) + evalSetting + evalRomance + evalEnding + evalAnimation;
+    return Number((total / 7).toFixed(1)); // 1.5+1.5+1+1+1+1 = 7
+  };
+  const overallScore = calculateOverallScore().toFixed(1);
 
   useEffect(() => {
     if (!user) return;
@@ -94,6 +100,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
           setRomanceLevel(data.classification.romanceLevel || 'None');
           setConfessionTiming(data.classification.confessionTiming || 'N/A');
           setIntimacyLevel(data.classification.intimacyLevel || 'None');
+          setLengthStr(data.classification.length || '');
           setWholesomeLewdScale(data.classification.wholesomeLewdScale || 5);
           setComedySeriousScale(data.classification.comedySeriousScale || 5);
         }
@@ -101,8 +108,9 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
           setEvalStory(data.evaluation.story || 5);
           setEvalCharacters(data.evaluation.characters || 5);
           setEvalSetting(data.evaluation.setting || 5);
-          setEvalRomance(data.evaluation.romanceQuality || 5);
+          setEvalRomance(data.evaluation.romance || 5);
           setEvalEnding(data.evaluation.ending || 5);
+          setEvalAnimation(data.evaluation.animation || 5);
           setEmotionalImpact(data.evaluation.emotionalImpact || 'Keine');
         }
       }
@@ -138,6 +146,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         confessionTiming,
         intimacyLevel,
         traits: [],
+        length: lengthStr,
         wholesomeLewdScale,
         comedySeriousScale,
         summary: summaryStr
@@ -146,8 +155,9 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         story: evalStory,
         characters: evalCharacters,
         setting: evalSetting,
-        romanceQuality: evalRomance,
+        romance: evalRomance,
         ending: evalEnding,
+        animation: evalAnimation,
         emotionalImpact,
         overallScore: parseFloat(overallScore)
       },
@@ -225,6 +235,14 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
                   <MenuItem value="DROPPED">Abgebrochen</MenuItem>
                 </Select>
               </FormControl>
+
+              <TextField 
+                label="Länge (z.B. 24 Folgen, 2 Staffeln, Film)" 
+                value={lengthStr} 
+                onChange={(e) => setLengthStr(e.target.value)} 
+                fullWidth 
+                sx={{ mt: 2 }}
+              />
 
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Checkbox 
@@ -352,10 +370,13 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         <Typography gutterBottom sx={{ mt: 2 }}>Characters (1-10)</Typography>
         <Slider value={evalCharacters} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalCharacters(val as number)} />
 
-        <Typography gutterBottom sx={{ mt: 2 }}>Setting / World Building (1-10)</Typography>
+        <Typography variant="body1" sx={{ mt: 2 }}>Setting / World-Building</Typography>
         <Slider value={evalSetting} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalSetting(val as number)} />
 
-        <Typography gutterBottom sx={{ mt: 2 }}>Romance Quality (1-10)</Typography>
+        <Typography variant="body1" sx={{ mt: 2 }}>Animationsqualität / Zeichenstil</Typography>
+        <Slider value={evalAnimation} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalAnimation(val as number)} />
+
+        <Typography variant="body1" sx={{ mt: 2 }}>Romance & Chemie</Typography>
         <Slider value={evalRomance} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalRomance(val as number)} />
 
         <Typography gutterBottom sx={{ mt: 2 }}>Ending Satisfaction (1-10)</Typography>

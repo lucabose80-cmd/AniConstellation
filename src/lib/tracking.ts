@@ -18,6 +18,7 @@ export interface TrackingData {
     intimacyLevel: string;
     traits: string[];
     summary?: string;
+    length?: string;
     wholesomeLewdScale: number; // 1 to 10
     comedySeriousScale: number; // 1 to 10
   };
@@ -25,8 +26,9 @@ export interface TrackingData {
     story: number; // 1 to 10
     characters: number;
     setting: number;
-    romanceQuality: number;
+    romance: number;
     ending: number;
+    animation?: number;
     emotionalImpact: string; // Highest: "Tränen ausgelöst"
     overallScore: number; // Calculated automatically
   };
