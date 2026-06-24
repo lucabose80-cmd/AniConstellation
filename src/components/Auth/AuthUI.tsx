@@ -37,14 +37,14 @@ export default function AuthUI() {
           <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }} color="primary">
             AniConstellation
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {isLogin ? 'Welcome back! Login to continue.' : 'Create an account to start tracking.'}
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            Logge dich ein oder registriere dich, um deine Anime und Manga zu tracken und deine eigene Sternenkarte zu erstellen.
           </Typography>
         </Box>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <TextField
-            label="Email"
+            label="E-Mail"
             type="email"
             variant="outlined"
             fullWidth
@@ -53,7 +53,7 @@ export default function AuthUI() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <TextField
-            label="Password"
+            label="Passwort"
             type="password"
             variant="outlined"
             fullWidth
@@ -72,17 +72,14 @@ export default function AuthUI() {
             disabled={loading}
             sx={{ mt: 1, py: 1.5, fontWeight: 'bold' }}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : (isLogin ? 'Login' : 'Sign Up')}
+            {loading ? <CircularProgress size={24} color="inherit" /> : (isLogin ? 'Login' : 'Registrieren')}
           </Button>
         </form>
 
         <Box sx={{ textAlign: 'center', mt: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <Button color="secondary" onClick={() => setIsLogin(!isLogin)} sx={{ textTransform: 'none', fontWeight: 'bold' }}>
-              {isLogin ? 'Sign up here' : 'Login here'}
-            </Button>
-          </Typography>
+          <Button color="secondary" onClick={() => setIsLogin(!isLogin)} sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+            {isLogin ? "Noch kein Account? Registrieren" : "Bereits einen Account? Login"}
+          </Button>
         </Box>
       </Paper>
     </Box>

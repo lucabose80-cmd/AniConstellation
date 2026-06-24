@@ -1,49 +1,70 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Grid, Card, CardMedia, CardContent, Typography, CircularProgress, CardActionArea } from '@mui/material';
+import { Box, TextField, Card, CardContent, CardMedia, Typography, CircularProgress, CardActionArea, InputAdornment, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { searchMedia, AniListMedia } from '@/lib/anilist';
-import { useDebounce } from '@/hooks/useDebounce';
 
-export default function AniListSearch({ onSelect }: { onSelect: (id: number) => void }) {
+interface AniListSearchProps {
+  onSelect: (id: number) => void;
+}
+
+export default function AniListSearch({ onSelect }: AniListSearchProps) {
   const [query, setQuery] = useState('');
+  const [type, setType] = useState<'ANIME' | 'MANGA'>('ANIME');
   const [results, setResults] = useState<AniListMedia[]>([]);
   const [loading, setLoading] = useState(false);
-  const debouncedQuery = useDebounce(query, 500);
 
   useEffect(() => {
-    if (debouncedQuery.length < 3) {
-      setResults([]);
-      return;
-    }
-    let active = true;
-    setLoading(true);
-    searchMedia(debouncedQuery).then((data) => {
-      if (active) {
+    const delayDebounceFn = setTimeout(async () => {
+      if (query.trim()) {
+        setLoading(true);
+        const data = await searchMedia(query, type);
         setResults(data);
         setLoading(false);
+      } else {
+        setResults([]);
       }
-    });
-    return () => { active = false; };
-  }, [debouncedQuery]);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [query, type]);
 
   return (
     <Box sx={{ width: '100%' }}>
       <Typography variant="h4" sx={{ fontWeight: 'bold' }} color="primary" gutterBottom>
-        Discover
+        Entdecke Werke
       </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Search for Manga or Anime to track and compare.
-      </Typography>
-      
-      <TextField
-        fullWidth
-        label="Search Anime or Manga..."
-        variant="outlined"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        sx={{ mb: 4 }}
-      />
+      <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
+        <TextField
+          fullWidth
+          label="Titel suchen..."
+          variant="outlined"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          sx={{ flexGrow: 1, minWidth: 200 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <ToggleButtonGroup
+          color="primary"
+          value={type}
+          exclusive
+          onChange={(e, newType) => {
+            if (newType !== null) setType(newType);
+          }}
+          aria-label="Media Type"
+        >
+          <ToggleButton value="ANIME">Anime</ToggleButton>
+          <ToggleButton value="MANGA">Manga</ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+
       {loading && <CircularProgress sx={{ display: 'block', mx: 'auto', mb: 2 }} />}
       
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
@@ -55,12 +76,12 @@ export default function AniListSearch({ onSelect }: { onSelect: (id: number) => 
                   component="img"
                   height="300"
                   image={media.coverImage.large}
-                  alt={media.title.romaji}
+                  alt={media.title.english || media.title.romaji}
                   sx={{ objectFit: 'cover' }}
                 />
                 <CardContent>
                   <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }} noWrap>
-                    {media.title.romaji}
+                    {media.title.english || media.title.romaji}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {media.type} • {media.status}

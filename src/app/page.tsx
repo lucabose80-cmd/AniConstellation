@@ -56,7 +56,7 @@ export default function Home() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
@@ -88,6 +88,7 @@ export default function Home() {
                 setSelectedMediaId(null);
                 fetchTrackingData();
               }} 
+              onNavigate={(id) => setSelectedMediaId(id)}
             />
           </Box>
         ) : isSearchMode ? (

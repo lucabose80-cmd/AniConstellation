@@ -1,12 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CardMedia, CircularProgress, Button, Chip } from '@mui/material';
+import { Box, Typography, CardMedia, CircularProgress, Button, Chip, Paper } from '@mui/material';
 import { getMediaDetails, AniListMedia } from '@/lib/anilist';
 import TrackingForm from './TrackingForm';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-export default function MediaDetail({ id, onBack }: { id: number, onBack: () => void }) {
+interface MediaDetailProps {
+  id: number;
+  onBack: () => void;
+  onNavigate?: (id: number) => void;
+}
+
+export default function MediaDetail({ id, onBack, onNavigate }: MediaDetailProps) {
   const [media, setMedia] = useState<AniListMedia | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,55 +26,60 @@ export default function MediaDetail({ id, onBack }: { id: number, onBack: () => 
   if (loading) return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 4 }} />;
   if (!media) return <Typography>Media not found</Typography>;
 
-  // Check relations for SOURCE or ADAPTATION
-  const counterpartEdge = media.relations?.edges.find(e => 
-    e.relationType === 'SOURCE' || e.relationType === 'ADAPTATION'
+  // Get the most relevant counterpart (manga for anime, anime for manga)
+  const counterpartEdge = media.relations?.edges?.find(e => 
+    e.relationType === 'ADAPTATION' || e.relationType === 'SOURCE' || e.relationType === 'ALTERNATIVE'
   );
   
-  const hasCounterpart = !!counterpartEdge;
-  const counterpartNode = counterpartEdge?.node;
+  const counterpart = counterpartEdge?.node;
+  const hasCounterpart = !!counterpart;
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-      <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ mb: 3 }}>
-        Back to Search
+      <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ mb: 2 }}>
+        Zurück zur Map
       </Button>
       
-      <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
-        <CardMedia
-          component="img"
-          image={media.coverImage.large}
-          alt={media.title.romaji}
-          sx={{ width: { xs: '100%', md: 300 }, borderRadius: 3, objectFit: 'cover' }}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '300px 1fr' }, gap: 4 }}>
+        <Box 
+          component="img" 
+          src={media.coverImage.large} 
+          alt={media.title.english || media.title.romaji} 
+          sx={{ width: '100%', borderRadius: 2, boxShadow: 3, objectFit: 'cover', alignSelf: 'start', maxHeight: { xs: 400, md: 'none' } }} 
         />
         
-        <Box sx={{ flexGrow: 1 }}>
+        <Box>
           <Typography variant="h4" sx={{ fontWeight: 'bold' }} gutterBottom>
-            {media.title.romaji}
+            {media.title.english || media.title.romaji}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-            <Chip label={media.type} color="primary" />
-            <Chip label={media.status} variant="outlined" />
-            <Chip label={media.format} variant="outlined" />
+            <Chip label={media.type} color="primary" size="small" />
+            <Chip label={media.status} variant="outlined" size="small" />
+            <Chip label={media.format} variant="outlined" size="small" />
           </Box>
 
-          {hasCounterpart && counterpartNode && (
-            <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, mb: 3 }}>
-              <Typography variant="subtitle2" color="secondary" gutterBottom>
-                Counterpart exists ({counterpartNode.type})
+          {counterpart && (
+            <Paper 
+              elevation={1} 
+              sx={{ p: 2, mb: 4, bgcolor: 'background.paper', cursor: onNavigate && counterpart.id ? 'pointer' : 'default', '&:hover': onNavigate && counterpart.id ? { bgcolor: 'action.hover' } : {} }}
+              onClick={() => {
+                if (onNavigate && counterpart.id) {
+                  onNavigate(counterpart.id);
+                }
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                Pendant vorhanden ({counterpart.type})
               </Typography>
               <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                {counterpartNode.title.romaji}
+                {counterpart.title.english || counterpart.title.romaji}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Status: {counterpartNode.status}
-              </Typography>
-            </Box>
+            </Paper>
           )}
 
           <TrackingForm 
             mediaId={media.id} 
-            title={media.title.romaji}
+            title={media.title.english || media.title.romaji}
             coverImage={media.coverImage.large}
             type={media.type} 
             hasCounterpart={hasCounterpart} 

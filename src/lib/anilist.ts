@@ -20,11 +20,11 @@ export interface AniListMedia {
   };
 }
 
-export async function searchMedia(query: string): Promise<AniListMedia[]> {
+export async function searchMedia(query: string, type: 'ANIME' | 'MANGA' = 'ANIME'): Promise<AniListMedia[]> {
   const graphqlQuery = `
-    query ($search: String) {
-      Page(page: 1, perPage: 12) {
-        media(search: $search, sort: POPULARITY_DESC) {
+    query ($search: String, $type: MediaType) {
+      Page(page: 1, perPage: 20) {
+        media(search: $search, type: $type, sort: POPULARITY_DESC) {
           id
           title {
             romaji
@@ -41,7 +41,7 @@ export async function searchMedia(query: string): Promise<AniListMedia[]> {
     }
   `;
 
-  const variables = { search: query };
+  const variables = { search: query, type };
 
   const response = await fetch(ANILIST_API_URL, {
     method: 'POST',
@@ -71,6 +71,8 @@ export async function getMediaDetails(id: number): Promise<AniListMedia | null> 
         type
         format
         status
+        genres
+        description
         relations {
           edges {
             relationType
@@ -79,8 +81,8 @@ export async function getMediaDetails(id: number): Promise<AniListMedia | null> 
               type
               title {
                 romaji
+                english
               }
-              status
             }
           }
         }

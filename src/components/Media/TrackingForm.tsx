@@ -52,8 +52,8 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
   // Status State
   const [status, setStatus] = useState<'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED'>('PLANNING');
-  const [storyAdaptation, setStoryAdaptation] = useState<number>(5);
-  const [pacing, setPacing] = useState<number>(5);
+  const [readAdaptation, setReadAdaptation] = useState<boolean>(true);
+  const [adaptationScores, setAdaptationScores] = useState({ story: 5, pacing: 5 });
 
   // Classification State
   const [genres, setGenres] = useState<string[]>([]);
@@ -80,8 +80,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       if (data) {
         setStatus(data.status);
         if (data.adaptationScores) {
-          setStoryAdaptation(data.adaptationScores.storyAdaptation);
-          setPacing(data.adaptationScores.pacing);
+          setAdaptationScores(data.adaptationScores);
         }
         if (data.classification) {
           setGenres(data.classification.genres || []);
@@ -134,8 +133,8 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       updatedAt: Date.now()
     };
     
-    if (hasCounterpart) {
-      data.adaptationScores = { storyAdaptation, pacing };
+    if (hasCounterpart && readAdaptation) {
+      data.adaptationScores = adaptationScores;
     }
     
     await saveTrackingData(user.uid, data);
@@ -162,36 +161,61 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
       {/* TAB 1: Status & Cross-Tracking */}
       <CustomTabPanel value={tabIndex} index={0}>
-        <FormControl fullWidth sx={{ mb: 4 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={status}
-            label="Status"
-            onChange={(e) => setStatus(e.target.value as any)}
-          >
-            <MenuItem value="PLANNING">Planning</MenuItem>
-            <MenuItem value="CURRENT">Current</MenuItem>
-            <MenuItem value="COMPLETED">Completed</MenuItem>
-            <MenuItem value="DROPPED">Dropped</MenuItem>
-          </Select>
-        </FormControl>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <FormControl fullWidth>
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={status}
+              label="Status"
+              onChange={(e) => setStatus(e.target.value as any)}
+            >
+              <MenuItem value="PLANNING">Geplant</MenuItem>
+              <MenuItem value="CURRENT">Aktuell</MenuItem>
+              <MenuItem value="COMPLETED">Abgeschlossen</MenuItem>
+              <MenuItem value="DROPPED">Abgebrochen</MenuItem>
+            </Select>
+          </FormControl>
 
-        {hasCounterpart && (
-          <Box sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }} gutterBottom color="primary">
-              Adaptation Comparison
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              How well does this adapt the source material?
-            </Typography>
-            
-            <Typography gutterBottom sx={{ mt: 2 }}>Story Adaption (1-10)</Typography>
-            <Slider value={storyAdaptation} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setStoryAdaptation(val as number)} />
-
-            <Typography gutterBottom sx={{ mt: 2 }}>Pacing (1-10)</Typography>
-            <Slider value={pacing} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setPacing(val as number)} />
-          </Box>
-        )}
+          {hasCounterpart && (
+            <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Checkbox 
+                  checked={readAdaptation} 
+                  onChange={(e) => setReadAdaptation(e.target.checked)} 
+                  color="primary"
+                />
+                <Typography variant="body1">
+                  Originalmaterial (Pendant) gelesen/gesehen?
+                </Typography>
+              </Box>
+              
+              {readAdaptation && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" color="primary" gutterBottom>
+                    Adaptions-Vergleich
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                    Wie gut wurde das Originalmaterial adaptiert?
+                  </Typography>
+                  
+                  <Typography variant="body2" sx={{ mt: 2 }}>Story Adaption (1-10)</Typography>
+                  <Slider 
+                    value={adaptationScores.story} 
+                    min={1} max={10} step={1} marks valueLabelDisplay="auto"
+                    onChange={(_, val) => setAdaptationScores({...adaptationScores, story: val as number})}
+                  />
+                  
+                  <Typography variant="body2" sx={{ mt: 1 }}>Pacing (1-10)</Typography>
+                  <Slider 
+                    value={adaptationScores.pacing} 
+                    min={1} max={10} step={1} marks valueLabelDisplay="auto"
+                    onChange={(_, val) => setAdaptationScores({...adaptationScores, pacing: val as number})}
+                  />
+                </Box>
+              )}
+            </Paper>
+          )}
+        </Box>
       </CustomTabPanel>
 
       {/* TAB 2: Klassifizierung */}
@@ -285,13 +309,14 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
       <Button
         variant="contained"
-        color="primary"
+        color="secondary"
         fullWidth
-        sx={{ mt: 4, py: 1.5, fontWeight: 'bold' }}
+        size="large"
+        sx={{ mt: 4, py: 1.5, fontWeight: 'bold', borderRadius: '100px' }}
         onClick={handleSave}
         disabled={saving}
       >
-        {saving ? <CircularProgress size={24} color="inherit" /> : 'Save Everything'}
+        {saving ? <CircularProgress size={24} color="inherit" /> : 'Alles Speichern'}
       </Button>
     </Box>
   );
