@@ -36,6 +36,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [hoverNode, setHoverNode] = useState<NodeData | null>(null);
+  const [hoverLink, setHoverLink] = useState<LinkData | null>(null);
 
   useEffect(() => {
     if (containerRef.current) {
@@ -113,7 +114,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           const sharedGenres = genresA.filter(g => genresB.includes(g));
           if (sharedGenres.length > 1) {
             similarity += sharedGenres.length;
-            reasons.push(`${sharedGenres.length} Genres`);
+            reasons.push(`Geteilte Genres (${sharedGenres.join(', ')})`);
           }
         }
         
@@ -122,7 +123,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
               dataA.classification.romanceLevel !== 'None' &&
               dataA.classification.romanceLevel === dataB?.classification?.romanceLevel) {
             similarity += 3;
-            reasons.push(dataA.classification.romanceLevel);
+            reasons.push(`Romance-Level: ${dataA.classification.romanceLevel}`);
           }
         }
 
@@ -130,7 +131,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           const diff = Math.abs((dataA?.evaluation?.overallScore || 0) - (dataB?.evaluation?.overallScore || 0));
           if (diff <= 1 && (dataA?.evaluation?.overallScore || 0) > 7) {
             similarity += 2;
-            reasons.push('Top-Tier');
+            reasons.push(`Beide Top-Tier bewertet`);
           }
         }
 
@@ -138,7 +139,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           links.push({
             source: regularNodes[i].id,
             target: regularNodes[j].id,
-            label: reasons.join(' & ')
+            label: reasons.join(' \n ')
           });
         }
       }
@@ -245,24 +246,47 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     else ctx.setLineDash([]);
     ctx.stroke();
 
-    // Text label in the middle
-    if (link.label) {
+    // Text label in the middle, only if hovered
+    const isHovered = hoverLink && 
+                      ((hoverLink.source as any).id === start.id && (hoverLink.target as any).id === end.id);
+
+    if (link.label && isHovered) {
       const midX = start.x + (end.x - start.x) / 2;
       const midY = start.y + (end.y - start.y) / 2;
       
-      const fontSize = 8;
+      const fontSize = 10;
       ctx.font = `${fontSize}px Inter, sans-serif`;
-      const textWidth = ctx.measureText(link.label).width;
       
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(midX - textWidth / 2 - 2, midY - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
+      // Handle multiline text
+      const lines = link.label.split(' \n ');
+      let maxWidth = 0;
+      lines.forEach((line: string) => {
+        const w = ctx.measureText(line).width;
+        if (w > maxWidth) maxWidth = w;
+      });
+      
+      const padding = 6;
+      const bgWidth = maxWidth + padding * 2;
+      const bgHeight = (lines.length * (fontSize + 4)) + padding;
+      
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(midX - bgWidth / 2, midY - bgHeight / 2, bgWidth, bgHeight, 6);
+      ctx.fill();
+      ctx.strokeStyle = link.isCounterpart ? 'rgba(255, 215, 0, 0.5)' : 'rgba(208, 188, 255, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
       
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = link.isCounterpart ? '#FFD700' : '#D0BCFF';
-      ctx.fillText(link.label, midX, midY);
+      ctx.fillStyle = link.isCounterpart ? '#FFD700' : '#EADDFF';
+      
+      const startY = midY - (lines.length * (fontSize + 4)) / 2 + (fontSize / 2) + 2;
+      lines.forEach((line: string, idx: number) => {
+        ctx.fillText(line, midX, startY + idx * (fontSize + 4));
+      });
     }
-  }, []);
+  }, [hoverLink]);
 
   return (
     <Box ref={containerRef} sx={{ width: '100%', height: '100%', position: 'relative', background: 'radial-gradient(circle at center, #2B1B54 0%, #0F0A1F 100%)' }}>
@@ -275,6 +299,8 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           linkCanvasObject={paintLink}
           nodeRelSize={2}
           onNodeHover={(node: any) => setHoverNode(node || null)}
+          onLinkHover={(link: any) => setHoverLink(link || null)}
+          linkHoverPrecision={10}
           onNodeClick={(node: any) => onNodeClick(parseInt(node.id.toString().replace('rec-', '')))}
           backgroundColor="transparent"
           linkDirectionalParticles={0}
