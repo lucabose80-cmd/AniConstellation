@@ -285,7 +285,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
             </Box>
           )}
 
-          <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.light', color: 'primary.contrastText', borderRadius: 2 }}>
+          <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.main', color: '#FFFFFF', borderRadius: 2 }}>
             <Typography variant="subtitle2" gutterBottom>Generierte Klassifizierung:</Typography>
             <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
               {(() => {
@@ -395,7 +395,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
           </Select>
         </FormControl>
 
-        <Box sx={{ p: 2, bgcolor: 'primary.dark', color: 'primary.contrastText', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ p: 2, bgcolor: 'primary.main', color: '#FFFFFF', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Errechneter Gesamtscore:</Typography>
           <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{overallScore}</Typography>
         </Box>
