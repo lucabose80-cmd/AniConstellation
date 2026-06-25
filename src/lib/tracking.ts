@@ -12,26 +12,32 @@ export interface TrackingData {
     pacing: number;
   };
   classification?: {
-    genres: string[];
-    romanceLevel: string;
-    confessionTiming: string;
-    intimacyLevel: string;
-    traits: string[];
-    summary?: string;
+    genres?: string[];
     length?: string;
-    wholesomeLewdScale: number; // 1 to 10
-    comedySeriousScale: number; // 1 to 10
+    romanceLevel?: string;
+    confessionTiming?: string;
+    intimacyLevel?: string;
+    relationshipDynamics?: string;
+    wholesomeLewdScale?: number;
+    comedySeriousScale?: number;
+    actionDialogScale?: number;
+    pacingScale?: number;
+    summary?: string;
   };
   evaluation?: {
-    story: number; // 1 to 10
-    characters: number;
-    setting: number;
-    romance: number;
-    ending: number;
+    story?: number;
+    characters?: number;
+    setting?: number;
     animation?: number;
     artstyle?: number;
-    emotionalImpact: string; // Highest: "Tränen ausgelöst"
-    overallScore: number; // Calculated automatically
+    romance?: number;
+    ending?: number;
+    supportingCast?: number;
+    antagonist?: number;
+    rewatchValue?: number;
+    immersion?: number;
+    emotionalImpact?: string;
+    overallScore?: number;
   };
   updatedAt: number;
 }
