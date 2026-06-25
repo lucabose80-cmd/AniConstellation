@@ -118,6 +118,7 @@ export default function Home() {
                 <MenuItem value="GENRES">Ähnliche Genres</MenuItem>
                 <MenuItem value="ROMANCE">Gleiches Romance-Level</MenuItem>
                 <MenuItem value="RATING">Ähnliche Top-Bewertung</MenuItem>
+                <MenuItem value="SOURCE">Nach Quelle (Anime/Manga)</MenuItem>
               </Select>
 
               {recommendations.length > 0 && (

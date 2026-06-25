@@ -28,7 +28,7 @@ interface ConstellationMapProps {
   trackingData: TrackingData[];
   recommendations?: AniListMedia[];
   onNodeClick: (id: number) => void;
-  filterBy: 'GENRES' | 'ROMANCE' | 'RATING' | 'ALL';
+  filterBy: 'GENRES' | 'ROMANCE' | 'RATING' | 'ALL' | 'SOURCE';
 }
 
 export default function ConstellationMap({ trackingData, recommendations = [], onNodeClick, filterBy }: ConstellationMapProps) {
@@ -147,6 +147,13 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           if (diff <= 1 && (dataA?.evaluation?.overallScore || 0) > 7) {
             similarity += 2;
             reasons.push(`Beide Top-Tier bewertet`);
+          }
+        }
+
+        if (filterBy === 'SOURCE') {
+          if (dataA?.type && dataA.type === dataB?.type) {
+            similarity += 2;
+            reasons.push(`Medium: ${dataA.type === 'ANIME' ? 'Anime' : 'Manga'}`);
           }
         }
 
