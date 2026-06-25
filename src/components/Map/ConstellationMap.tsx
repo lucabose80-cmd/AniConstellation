@@ -225,7 +225,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
   useEffect(() => {
     if (fgRef.current) {
       fgRef.current.d3Force('charge').strength(-500); // Mehr Platz zwischen den Nodes
-      fgRef.current.d3Force('link').distance(80); // Längere Verbindungen
+      fgRef.current.d3Force('link').distance((link: any) => link.isCounterpart ? 30 : 100); // Franchise links closer
       fgRef.current.d3ReheatSimulation();
     }
   }, [graphData]);
@@ -301,7 +301,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     ctx.lineTo(end.x, end.y);
     if (link.isCounterpart) {
       ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1;
     } else {
       ctx.strokeStyle = 'rgba(200, 200, 255, 0.5)';
       ctx.lineWidth = 1;
