@@ -160,53 +160,30 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     setGraphData({ nodes, links });
   }, [trackingData, recommendations, dimensions, filterBy]);
 
-  // Helper to draw a 5-point star
-  const drawStar = (ctx: CanvasRenderingContext2D, cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number) => {
-    let rot = Math.PI / 2 * 3;
-    let x = cx;
-    let y = cy;
-    let step = Math.PI / spikes;
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - outerRadius);
-    for (let i = 0; i < spikes; i++) {
-      x = cx + Math.cos(rot) * outerRadius;
-      y = cy + Math.sin(rot) * outerRadius;
-      ctx.lineTo(x, y);
-      rot += step;
-
-      x = cx + Math.cos(rot) * innerRadius;
-      y = cy + Math.sin(rot) * innerRadius;
-      ctx.lineTo(x, y);
-      rot += step;
-    }
-    ctx.lineTo(cx, cy - outerRadius);
-    ctx.closePath();
-  };
-
   const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
     const size = Math.max(3, node.val);
-    const outerRadius = size * 1.5;
-    const innerRadius = size * 0.7;
     
     // Draw Glow
     if (node.isRecommendation) {
-      drawStar(ctx, node.x, node.y, 5, outerRadius * 1.8, innerRadius * 1.8);
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, size * 2.2, 0, 2 * Math.PI, false);
       ctx.fillStyle = `rgba(255, 215, 0, 0.4)`; // Gold glow
       ctx.fill();
     } else if (node.val > 7) {
-      drawStar(ctx, node.x, node.y, 5, outerRadius * 1.8, innerRadius * 1.8);
-      ctx.fillStyle = `rgba(255, 215, 0, ${Math.min(0.6, (node.val - 6) * 0.15)})`;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, size * 2.2, 0, 2 * Math.PI, false);
+      ctx.fillStyle = `rgba(208, 188, 255, ${Math.min(0.6, (node.val - 6) * 0.15)})`;
       ctx.fill();
     }
 
-    // Draw Star Base
-    drawStar(ctx, node.x, node.y, 5, outerRadius, innerRadius);
-    ctx.fillStyle = '#FFD700'; // Gold center
+    // Draw Node Base
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
+    ctx.fillStyle = node.isRecommendation ? '#FFD700' : '#D0BCFF';
     ctx.fill();
     
     // Draw stroke
-    ctx.strokeStyle = node.isRecommendation ? '#FFF' : '#B8860B';
+    ctx.strokeStyle = node.isRecommendation ? '#FFF' : '#381E72';
     ctx.lineWidth = 1;
     ctx.stroke();
 
@@ -219,7 +196,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     // Background Pill
     const paddingX = 4;
     const paddingY = 2;
-    const badgeY = node.y + outerRadius + 2;
+    const badgeY = node.y + size + 4;
     
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.beginPath();
@@ -252,10 +229,9 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.lineTo(end.x, end.y);
-    ctx.strokeStyle = link.isCounterpart ? 'rgba(255, 215, 0, 0.8)' : 'rgba(208, 188, 255, 0.25)';
-    ctx.lineWidth = link.isCounterpart ? 2 : 1;
-    if (link.isCounterpart) ctx.setLineDash([5, 5]); // Dashed line for adaptations
-    else ctx.setLineDash([]);
+    ctx.strokeStyle = link.isCounterpart ? 'rgba(255, 215, 0, 0.3)' : 'rgba(208, 188, 255, 0.25)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
     ctx.stroke();
   }, []);
 
