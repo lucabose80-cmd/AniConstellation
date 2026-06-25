@@ -64,6 +64,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
   // Classification State
   const [genres, setGenres] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [lengthStr, setLengthStr] = useState<string>('');
   const [romanceLevel, setRomanceLevel] = useState<string>('None');
   const [confessionTiming, setConfessionTiming] = useState<string>('N/A');
@@ -89,6 +90,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
   const EMOTIONAL_IMPACTS = ['Keine', 'Leicht', 'Mitgenommen', 'Tränen nah', 'Tränen ausgelöst'];
   const RELATIONSHIP_DYNAMICS = ['None', 'Enemies to Lovers', 'Childhood Friends', 'Slow Burn', 'Harem', 'Love Triangle', 'Arranged Marriage', 'Student/Teacher', 'Andere'];
+  const TAGS_LIST = ['Time Travel', 'Isekai', 'School Life', 'Mecha', 'Magic', 'Supernatural', 'Psychological', 'Cyberpunk', 'Post-Apocalyptic', 'Slice of Life', 'Mystery', 'Thriller', 'Historical', 'Military', 'Sports', 'Music', 'CGDCT', 'Overpowered MC', 'Found Family', 'Revenge', 'Coming of Age', 'Death Game', 'Gore', 'Dark Fantasy'];
 
   const calculateOverallScore = () => {
     // Base Weights: Story(2.0), Characters(2.0), Setting(1.0), SuppCast(1.0), Romance(1.0), Ending(1.0), Anim(0.5), Art(0.5), Rewatch(0.5), Immersion(0.5) = 10.0
@@ -122,6 +124,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         }
         if (data.classification) {
           setGenres(data.classification.genres || []);
+          setTags(data.classification.tags || []);
           setLengthStr(data.classification.length || '');
           setRomanceLevel(data.classification.romanceLevel || 'None');
           setConfessionTiming(data.classification.confessionTiming || 'N/A');
@@ -162,6 +165,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       status,
       classification: {
         genres,
+        tags,
         length: lengthStr,
         romanceLevel,
         confessionTiming,
@@ -332,8 +336,8 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       {/* TAB 2: Klassifizierung */}
       <CustomTabPanel value={tabIndex} index={1}>
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
-          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Meta-Daten</Typography>
-          <FormControl fullWidth sx={{ mt: 1, mb: 1 }}>
+          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Basis-Daten</Typography>
+          <FormControl fullWidth sx={{ mt: 1, mb: 3 }}>
             <InputLabel>Genres</InputLabel>
             <Select
               multiple
@@ -353,34 +357,60 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
               ))}
             </Select>
           </FormControl>
+
+          <FormControl fullWidth sx={{ mb: 1 }}>
+            <InputLabel>Tags & Tropes</InputLabel>
+            <Select
+              multiple
+              value={tags}
+              onChange={(e) => setTags(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+              input={<OutlinedInput label="Tags & Tropes" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => (
+                    <Chip key={value} label={value} size="small" color="secondary" />
+                  ))}
+                </Box>
+              )}
+            >
+              {TAGS_LIST.map((name) => (
+                <MenuItem key={name} value={name}>{name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Paper>
 
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
           <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Romance-Dynamik</Typography>
-          <FormControl fullWidth sx={{ mb: 3, mt: 1 }}>
+          <FormControl fullWidth sx={{ mb: romanceLevel !== 'None' ? 3 : 1, mt: 1 }}>
             <InputLabel>Romance Level</InputLabel>
             <Select value={romanceLevel} label="Romance Level" onChange={(e) => setRomanceLevel(e.target.value)}>
               {ROMANCE_LEVELS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
             </Select>
           </FormControl>
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel>Confession Timing</InputLabel>
-            <Select value={confessionTiming} label="Confession Timing" onChange={(e) => setConfessionTiming(e.target.value)}>
-              {CONFESSION_TIMINGS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
-            </Select>
-          </FormControl>
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel>Intimacy Level (Höchstes)</InputLabel>
-            <Select value={intimacyLevel} label="Intimacy Level (Höchstes)" onChange={(e) => setIntimacyLevel(e.target.value)}>
-              {INTIMACY_LEVELS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
-            </Select>
-          </FormControl>
-          <FormControl fullWidth sx={{ mb: 1 }}>
-            <InputLabel>Beziehungs-Dynamik</InputLabel>
-            <Select value={relationshipDynamics} label="Beziehungs-Dynamik" onChange={(e) => setRelationshipDynamics(e.target.value)}>
-              {RELATIONSHIP_DYNAMICS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
-            </Select>
-          </FormControl>
+          
+          {romanceLevel !== 'None' && (
+            <>
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>Confession Timing</InputLabel>
+                <Select value={confessionTiming} label="Confession Timing" onChange={(e) => setConfessionTiming(e.target.value)}>
+                  {CONFESSION_TIMINGS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>Intimacy Level (Höchstes)</InputLabel>
+                <Select value={intimacyLevel} label="Intimacy Level (Höchstes)" onChange={(e) => setIntimacyLevel(e.target.value)}>
+                  {INTIMACY_LEVELS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth sx={{ mb: 1 }}>
+                <InputLabel>Beziehungs-Dynamik</InputLabel>
+                <Select value={relationshipDynamics} label="Beziehungs-Dynamik" onChange={(e) => setRelationshipDynamics(e.target.value)}>
+                  {RELATIONSHIP_DYNAMICS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
+                </Select>
+              </FormControl>
+            </>
+          )}
         </Paper>
 
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>

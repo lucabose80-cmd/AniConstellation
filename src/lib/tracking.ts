@@ -13,6 +13,7 @@ export interface TrackingData {
   };
   classification?: {
     genres?: string[];
+    tags?: string[];
     length?: string;
     romanceLevel?: string;
     confessionTiming?: string;
