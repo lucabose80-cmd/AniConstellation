@@ -84,8 +84,14 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
       });
     });
 
-    const links: LinkData[] = [];
+    const finalLinks: LinkData[] = [];
+    const simLinks: Array<{ source: string; target: string; similarity: number; label: string }> = [];
     
+    // Helpers to define families (Counterparts & Franchises)
+    const isCounterpart = (a: any, b: any) => Boolean(a && b && a.title === b.title && a.type !== b.type);
+    const isFranchise = (a: any, b: any) => Boolean(a && b && a.type === b.type && a.title.length > 3 && b.title.length > 3 && (a.title.startsWith(b.title) || b.title.startsWith(a.title)));
+    const isFamily = (a: any, b: any) => isCounterpart(a, b) || isFranchise(a, b);
+
     // Create links based on filter
     const regularNodes = nodes.filter(n => !n.isRecommendation);
     for (let i = 0; i < regularNodes.length; i++) {
@@ -93,28 +99,25 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
         const dataA = regularNodes[i].data;
         const dataB = regularNodes[j].data;
         
-        // Counterpart Link
-        if (dataA && dataB && dataA.title === dataB.title && dataA.type !== dataB.type) {
-          links.push({
+        // Always connect family members directly
+        if (isCounterpart(dataA, dataB)) {
+          finalLinks.push({
             source: regularNodes[i].id,
             target: regularNodes[j].id,
             label: 'Adaptation',
             isCounterpart: true
           });
-          continue; // Skip other similarity checks for counterparts
+          continue; 
         }
         
-        // Franchise / Sequel Link
-        if (dataA && dataB && dataA.type === dataB.type && dataA.title.length > 3 && dataB.title.length > 3) {
-          if (dataA.title.startsWith(dataB.title) || dataB.title.startsWith(dataA.title)) {
-             links.push({
-               source: regularNodes[i].id,
-               target: regularNodes[j].id,
-               label: 'Franchise / Serie',
-               isCounterpart: true // Re-use the dashed yellow line style
-             });
-             continue;
-          }
+        if (isFranchise(dataA, dataB)) {
+           finalLinks.push({
+             source: regularNodes[i].id,
+             target: regularNodes[j].id,
+             label: 'Franchise / Serie',
+             isCounterpart: true 
+           });
+           continue;
         }
 
         let similarity = 0;
@@ -148,16 +151,67 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
         }
 
         if (similarity > 1) {
-          links.push({
+          simLinks.push({
             source: regularNodes[i].id,
             target: regularNodes[j].id,
+            similarity,
             label: reasons.join(' \n ')
           });
         }
       }
     }
 
-    setGraphData({ nodes, links });
+    // Filter redundant similarity links to the same family
+    const linksToRemove = new Set<typeof simLinks[0]>();
+
+    for (let i = 0; i < regularNodes.length; i++) {
+      const nodeId = regularNodes[i].id;
+      const connectedLinks = simLinks.filter(l => (l.source === nodeId || l.target === nodeId) && !linksToRemove.has(l));
+      
+      for (let x = 0; x < connectedLinks.length; x++) {
+        for (let y = x + 1; y < connectedLinks.length; y++) {
+          const linkX = connectedLinks[x];
+          const linkY = connectedLinks[y];
+          
+          if (linksToRemove.has(linkX) || linksToRemove.has(linkY)) continue;
+
+          const targetX = linkX.source === nodeId ? linkX.target : linkX.source;
+          const targetY = linkY.source === nodeId ? linkY.target : linkY.source;
+
+          const nodeX = regularNodes.find(n => n.id === targetX);
+          const nodeY = regularNodes.find(n => n.id === targetY);
+          
+          if (nodeX && nodeY && isFamily(nodeX.data, nodeY.data)) {
+            // Node i is connecting to two members of the same family. Drop the weaker link.
+            let dropLink;
+            if (linkX.similarity < linkY.similarity) {
+              dropLink = linkX;
+            } else if (linkX.similarity > linkY.similarity) {
+              dropLink = linkY;
+            } else {
+              // Tie-breaker: Overall score
+              const scoreX = nodeX.data?.evaluation?.overallScore || 0;
+              const scoreY = nodeY.data?.evaluation?.overallScore || 0;
+              if (scoreX < scoreY) {
+                dropLink = linkX;
+              } else {
+                dropLink = linkY;
+              }
+            }
+            linksToRemove.add(dropLink);
+          }
+        }
+      }
+    }
+
+    // Combine finalLinks with the remaining simLinks
+    simLinks.forEach(link => {
+      if (!linksToRemove.has(link)) {
+        finalLinks.push({ source: link.source, target: link.target, label: link.label });
+      }
+    });
+
+    setGraphData({ nodes, links: finalLinks });
   }, [trackingData, recommendations, dimensions, filterBy]);
 
   const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
