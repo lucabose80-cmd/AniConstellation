@@ -34,6 +34,7 @@ interface ConstellationMapProps {
 export default function ConstellationMap({ trackingData, recommendations = [], onNodeClick, filterBy }: ConstellationMapProps) {
   const [graphData, setGraphData] = useState<{ nodes: NodeData[], links: LinkData[] }>({ nodes: [], links: [] });
   const containerRef = useRef<HTMLDivElement>(null);
+  const fgRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [hoverNode, setHoverNode] = useState<NodeData | null>(null);
 
@@ -221,6 +222,14 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     setGraphData({ nodes, links: finalLinks });
   }, [trackingData, recommendations, dimensions, filterBy]);
 
+  useEffect(() => {
+    if (fgRef.current) {
+      fgRef.current.d3Force('charge').strength(-500); // Mehr Platz zwischen den Nodes
+      fgRef.current.d3Force('link').distance(80); // Längere Verbindungen
+      fgRef.current.d3ReheatSimulation();
+    }
+  }, [graphData]);
+
   const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
     const size = Math.max(3, node.val);
     
@@ -233,14 +242,14 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     } else if (node.val > 7) {
       ctx.beginPath();
       ctx.arc(node.x, node.y, size * 2.2, 0, 2 * Math.PI, false);
-      ctx.fillStyle = `rgba(208, 188, 255, ${Math.min(0.6, (node.val - 6) * 0.15)})`;
+      ctx.fillStyle = `rgba(255, 234, 0, ${Math.min(0.6, (node.val - 6) * 0.15)})`;
       ctx.fill();
     }
 
     // Draw Node Base
     ctx.beginPath();
     ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
-    ctx.fillStyle = node.isRecommendation ? '#FFD700' : '#D0BCFF';
+    ctx.fillStyle = node.isRecommendation ? '#FFD700' : '#FFEA00';
     ctx.fill();
     
     // Draw stroke
@@ -290,8 +299,13 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.lineTo(end.x, end.y);
-    ctx.strokeStyle = link.isCounterpart ? 'rgba(255, 215, 0, 0.3)' : 'rgba(208, 188, 255, 0.25)';
-    ctx.lineWidth = 1;
+    if (link.isCounterpart) {
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+      ctx.lineWidth = 2;
+    } else {
+      ctx.strokeStyle = 'rgba(200, 200, 255, 0.5)';
+      ctx.lineWidth = 1;
+    }
     ctx.setLineDash([]);
     ctx.stroke();
   }, []);
@@ -300,12 +314,14 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     <Box ref={containerRef} sx={{ width: '100%', height: '100%', position: 'relative', background: 'radial-gradient(circle at center, #2B1B54 0%, #0F0A1F 100%)' }}>
       {graphData.nodes.length > 0 ? (
         <ForceGraph2D
+          ref={fgRef}
           width={dimensions.width}
           height={dimensions.height}
           graphData={graphData}
           nodeCanvasObject={paintNode}
           linkCanvasObject={paintLink}
           nodeRelSize={2}
+          onEngineStop={() => fgRef.current?.zoomToFit(400, 50)}
           onNodeHover={(node: any) => setHoverNode(node || null)}
           linkLabel={(link: any) => link.label ? `<div style="background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 8px; font-family: Inter, sans-serif; font-size: 12px; color: #fff; text-align: center;">${link.label.replace(/\n/g, '<br/>')}</div>` : ''}
           linkHoverPrecision={10}
