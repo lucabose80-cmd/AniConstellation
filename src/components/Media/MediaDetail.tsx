@@ -85,15 +85,11 @@ export default function MediaDetail({ id, onBack, onNavigate }: MediaDetailProps
           {(jikanMetadata?.synopsis || media.description) && (
             <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
               <Typography variant="subtitle2" color="primary" gutterBottom>Kurzbeschreibung</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ 
-                display: '-webkit-box', 
-                WebkitLineClamp: 4, 
-                WebkitBoxOrient: 'vertical', 
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
-                {jikanMetadata?.synopsis || media.description?.replace(/<[^>]*>?/gm, '')}
-              </Typography>
+              <Box sx={{ maxHeight: 200, overflowY: 'auto', pr: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {jikanMetadata?.synopsis || media.description?.replace(/<[^>]*>?/gm, '')}
+                </Typography>
+              </Box>
             </Paper>
           )}
 
@@ -117,6 +113,7 @@ export default function MediaDetail({ id, onBack, onNavigate }: MediaDetailProps
           )}
 
           <TrackingForm 
+            onSaved={onBack}
             mediaId={media.id} 
             title={media.title.english || media.title.romaji}
             coverImage={media.coverImage.large}

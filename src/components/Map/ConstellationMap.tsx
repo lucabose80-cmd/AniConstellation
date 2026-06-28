@@ -89,9 +89,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     const simLinks: Array<{ source: string; target: string; similarity: number; label: string }> = [];
     
     // Helpers to define families (Counterparts & Franchises)
-    const isCounterpart = (a: any, b: any) => Boolean(a && b && a.title === b.title && a.type !== b.type);
-    const isFranchise = (a: any, b: any) => Boolean(a && b && a.type === b.type && a.title.length > 3 && b.title.length > 3 && (a.title.startsWith(b.title) || b.title.startsWith(a.title)));
-    const isFamily = (a: any, b: any) => isCounterpart(a, b) || isFranchise(a, b);
+    const isSameFranchise = (a: any, b: any) => Boolean(a && b && a.title.length > 3 && b.title.length > 3 && (a.title.startsWith(b.title) || b.title.startsWith(a.title)));
 
     // Create links based on filter
     const regularNodes = nodes.filter(n => !n.isRecommendation);
@@ -99,26 +97,18 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
       for (let j = i + 1; j < regularNodes.length; j++) {
         const dataA = regularNodes[i].data;
         const dataB = regularNodes[j].data;
+        if (!dataA || !dataB) continue;
         
         // Always connect family members directly
-        if (isCounterpart(dataA, dataB)) {
+        if (isSameFranchise(dataA, dataB)) {
+          const isAdaptation = dataA.type !== dataB.type;
           finalLinks.push({
             source: regularNodes[i].id,
             target: regularNodes[j].id,
-            label: 'Adaptation',
-            isCounterpart: true
+            label: isAdaptation ? 'Adaptation' : 'Franchise / Serie',
+            isCounterpart: true 
           });
           continue; 
-        }
-        
-        if (isFranchise(dataA, dataB)) {
-           finalLinks.push({
-             source: regularNodes[i].id,
-             target: regularNodes[j].id,
-             label: 'Franchise / Serie',
-             isCounterpart: true 
-           });
-           continue;
         }
 
         let similarity = 0;
@@ -189,8 +179,8 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           const nodeX = regularNodes.find(n => n.id === targetX);
           const nodeY = regularNodes.find(n => n.id === targetY);
           
-          if (nodeX && nodeY && isFamily(nodeX.data, nodeY.data)) {
-            // Node i is connecting to two members of the same family. Drop the weaker link.
+          if (nodeX && nodeY && isSameFranchise(nodeX.data, nodeY.data)) {
+            // Node i is connecting to two members of the same franchise. Drop the weaker link.
             let dropLink;
             if (linkX.similarity < linkY.similarity) {
               dropLink = linkX;

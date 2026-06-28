@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Slider, CircularProgress, Tabs, Tab, Chip, OutlinedInput, Paper, Checkbox, TextField } from '@mui/material';
-import { saveTrackingData, getTrackingData, TrackingData } from '@/lib/tracking';
+import { saveTrackingData, getTrackingData, deleteTrackingData, TrackingData } from '@/lib/tracking';
 import { useAuth } from '@/hooks/useAuth';
 
 interface TrackingFormProps {
@@ -16,6 +16,7 @@ interface TrackingFormProps {
     title: { english?: string | null; romaji: string };
     type: string;
   };
+  onSaved?: () => void;
 }
 
 interface TabPanelProps {
@@ -42,12 +43,12 @@ function CustomTabPanel(props: TabPanelProps) {
 }
 
 const GENRES_LIST = ["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Isekai", "Mecha", "Mystery", "Psychological", "Romance", "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller"];
-const ROMANCE_LEVELS = ["None", "Subplot", "Prominent", "Main Focus"];
+const ROMANCE_LEVELS = ["Keine", "Angedeutet", "Subplot", "Hauptfokus"];
 const CONFESSION_TIMINGS = ["Early", "Middle", "End", "Never", "N/A"];
 const INTIMACY_LEVELS = ["None", "Händchen halten", "Umarmen", "Küssen", "Sex"];
 const EMOTIONAL_IMPACTS = ["Keine", "Leicht", "Mitgenommen", "Tränen ausgelöst"];
 
-export default function TrackingForm({ mediaId, title, coverImage, type, hasCounterpart, counterpart }: TrackingFormProps) {
+export default function TrackingForm({ mediaId, title, coverImage, type, hasCounterpart, counterpart, onSaved }: TrackingFormProps) {
   const { user } = useAuth();
   
   // UI State
@@ -56,49 +57,73 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
   const [saving, setSaving] = useState(false);
 
   // Status State
-  const [status, setStatus] = useState<'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED'>('PLANNING');
-  const [counterpartStatus, setCounterpartStatus] = useState<'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED'>('PLANNING');
-  const [syncCounterpart, setSyncCounterpart] = useState<boolean>(true);
+  const [status, setStatus] = useState<'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED' | 'NONE'>('PLANNING');
+  const [counterpartStatus, setCounterpartStatus] = useState<'NONE' | 'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED'>('NONE');
+  const [syncCounterpart, setSyncCounterpart] = useState<boolean>(false);
   const [readAdaptation, setReadAdaptation] = useState<boolean>(true);
   const [adaptationScores, setAdaptationScores] = useState({ story: 5, pacing: 5 });
 
   // Classification State
   const [genres, setGenres] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [secondaryTags, setSecondaryTags] = useState<string[]>([]);
+  const [characterTropes, setCharacterTropes] = useState<string[]>([]);
+  const [demography, setDemography] = useState<string>('');
   const [lengthStr, setLengthStr] = useState<string>('');
-  const [romanceLevel, setRomanceLevel] = useState<string>('None');
+  const [romanceLevel, setRomanceLevel] = useState<string>('Keine');
   const [confessionTiming, setConfessionTiming] = useState<string>('N/A');
   const [intimacyLevel, setIntimacyLevel] = useState<string>('None');
-  const [relationshipDynamics, setRelationshipDynamics] = useState<string>('None');
+  const [relationshipDynamics, setRelationshipDynamics] = useState<string[]>([]);
   const [wholesomeLewdScale, setWholesomeLewdScale] = useState<number>(5);
   const [comedySeriousScale, setComedySeriousScale] = useState<number>(5);
   const [actionDialogScale, setActionDialogScale] = useState<number>(5);
   const [pacingScale, setPacingScale] = useState<number>(5);
 
+  const [malSynced, setMalSynced] = useState<boolean>(false);
+
   // Qualitative State (1-10)
-  const [evalStory, setEvalStory] = useState<number>(5);
-  const [evalCharacters, setEvalCharacters] = useState<number>(5);
-  const [evalSetting, setEvalSetting] = useState<number>(5);
-  const [evalSupportingCast, setEvalSupportingCast] = useState<number>(5);
-  const [evalRomance, setEvalRomance] = useState<number>(5);
+  const [evalPlotAndStory, setEvalPlotAndStory] = useState<number>(5);
+  const [evalCastAndCharacters, setEvalCastAndCharacters] = useState<number>(5);
+  const [evalArtstyleAndAnimation, setEvalArtstyleAndAnimation] = useState<number>(5);
+  const [evalAudioAndMusic, setEvalAudioAndMusic] = useState<number>(5);
   const [evalEnding, setEvalEnding] = useState<number>(5);
-  const [evalAnimation, setEvalAnimation] = useState<number>(5);
-  const [evalArtstyle, setEvalArtstyle] = useState<number>(5);
-  const [evalRewatch, setEvalRewatch] = useState<number>(5);
-  const [evalImmersion, setEvalImmersion] = useState<number>(5);
+  const [evalRomanceAndChemistry, setEvalRomanceAndChemistry] = useState<number>(5);
+  const [evalBingeFactor, setEvalBingeFactor] = useState<number>(5);
   const [emotionalImpact, setEmotionalImpact] = useState<string>('Keine');
+  const [comments, setComments] = useState<string>('');
 
   const EMOTIONAL_IMPACTS = ['Keine', 'Leicht', 'Mitgenommen', 'Tränen nah', 'Tränen ausgelöst'];
-  const RELATIONSHIP_DYNAMICS = ['None', 'Enemies to Lovers', 'Childhood Friends', 'Slow Burn', 'Harem', 'Love Triangle', 'Arranged Marriage', 'Student/Teacher', 'Andere'];
-  const TAGS_LIST = ['Time Travel', 'Isekai', 'School Life', 'Mecha', 'Magic', 'Supernatural', 'Psychological', 'Cyberpunk', 'Post-Apocalyptic', 'Slice of Life', 'Mystery', 'Thriller', 'Historical', 'Military', 'Sports', 'Music', 'CGDCT', 'Overpowered MC', 'Found Family', 'Revenge', 'Coming of Age', 'Death Game', 'Gore', 'Dark Fantasy'];
+  const RELATIONSHIP_DYNAMICS = ['Enemies to Lovers', 'Childhood Friends', 'Slow Burn', 'Harem', 'Love Triangle', 'Arranged Marriage', 'Student/Teacher', 'Rivals', 'Andere'];
+  const CHAR_TROPES = ['Protag ist unbeliebt', 'Protag ist beliebt', 'Mangelndes Selbstwertgefühl', 'Overpowered MC', 'Tsundere', 'Yandere', 'Kuudere', 'Dandere', 'Chuunibyou'];
+  const DEMOGRAPHICS = ['Shounen', 'Seinen', 'Shoujo', 'Josei', 'Kids', 'N/A'];
+  const TAGS_LIST = ['Time Travel', 'Isekai', 'School Life', 'Mecha', 'Magic', 'Supernatural', 'Psychological', 'Cyberpunk', 'Post-Apocalyptic', 'Slice of Life', 'Mystery', 'Thriller', 'Historical', 'Military', 'Sports', 'Music', 'CGDCT', 'Found Family', 'Revenge', 'Coming of Age', 'Death Game', 'Gore', 'Dark Fantasy'];
+
 
   const calculateOverallScore = () => {
-    // Base Weights: Story(2.0), Characters(2.0), Setting(1.0), SuppCast(1.0), Romance(1.0), Ending(1.0), Anim(0.5), Art(0.5), Rewatch(0.5), Immersion(0.5) = 10.0
-    const baseScore = (evalStory * 2.0) + (evalCharacters * 2.0) + (evalSetting * 1.0) + (evalSupportingCast * 1.0) + 
-                      (evalRomance * 1.0) + (evalEnding * 1.0) + (evalAnimation * 0.5) + (evalArtstyle * 0.5) + 
-                      (evalRewatch * 0.5) + (evalImmersion * 0.5);
+    // Base Weights (max score sum = 10)
+    // Plot(2.5), Characters(2.5), Art(1.5), Audio(1.0 - nur Anime), Binge(1.5), Ending(1.0)
+    let maxBase = 0;
+    let currentScore = 0;
     
-    let finalScore = baseScore / 10.0;
+    currentScore += evalPlotAndStory * 2.5; maxBase += 25;
+    currentScore += evalCastAndCharacters * 2.5; maxBase += 25;
+    currentScore += evalArtstyleAndAnimation * 1.5; maxBase += 15;
+    
+    if (type === 'ANIME') {
+      currentScore += evalAudioAndMusic * 1.0; maxBase += 10;
+    }
+    
+    currentScore += evalBingeFactor * 1.5; maxBase += 15;
+    
+    if (status !== 'CURRENT') {
+      currentScore += evalEnding * 1.0; maxBase += 10;
+    }
+
+    if (romanceLevel !== 'Keine' && romanceLevel !== 'Angedeutet') {
+      currentScore += evalRomanceAndChemistry * 1.0; maxBase += 10;
+    }
+    
+    let finalScore = (currentScore / maxBase) * 10.0;
 
     // Emotional Leverage
     let emotionalBonus = 0;
@@ -125,33 +150,51 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         if (data.classification) {
           setGenres(data.classification.genres || []);
           setTags(data.classification.tags || []);
+          setSecondaryTags(data.classification.secondaryTags || []);
+          setCharacterTropes(data.classification.characterTropes || []);
+          setDemography(data.classification.demography || '');
           setLengthStr(data.classification.length || '');
-          setRomanceLevel(data.classification.romanceLevel || 'None');
+          setRomanceLevel(data.classification.romanceLevel || 'Keine');
           setConfessionTiming(data.classification.confessionTiming || 'N/A');
           setIntimacyLevel(data.classification.intimacyLevel || 'None');
-          setRelationshipDynamics(data.classification.relationshipDynamics || 'None');
+          
+          let dynamics = data.classification.relationshipDynamics;
+          let parsedDynamics: string[] = [];
+          if (typeof dynamics === 'string') parsedDynamics = [dynamics];
+          else if (Array.isArray(dynamics)) parsedDynamics = dynamics;
+          setRelationshipDynamics(parsedDynamics);
+          
           setWholesomeLewdScale(data.classification.wholesomeLewdScale || 5);
           setComedySeriousScale(data.classification.comedySeriousScale || 5);
           setActionDialogScale(data.classification.actionDialogScale || 5);
           setPacingScale(data.classification.pacingScale || 5);
         }
+        
+        setMalSynced(data.malSynced || false);
+
         if (data.evaluation) {
-          setEvalStory(data.evaluation.story || 5);
-          setEvalCharacters(data.evaluation.characters || 5);
-          setEvalSetting(data.evaluation.setting || 5);
-          setEvalSupportingCast(data.evaluation.supportingCast || 5);
-          setEvalRomance(data.evaluation.romance || 5);
+          setEvalPlotAndStory(data.evaluation.plotAndStory || 5);
+          setEvalCastAndCharacters(data.evaluation.castAndCharacters || 5);
+          setEvalArtstyleAndAnimation(data.evaluation.artstyleAndAnimation || 5);
+          setEvalAudioAndMusic(data.evaluation.audioAndMusic || 5);
           setEvalEnding(data.evaluation.ending || 5);
-          setEvalAnimation(data.evaluation.animation || 5);
-          setEvalArtstyle(data.evaluation.artstyle || 5);
-          setEvalRewatch(data.evaluation.rewatchValue || 5);
-          setEvalImmersion(data.evaluation.immersion || 5);
+          setEvalRomanceAndChemistry(data.evaluation.romanceAndChemistry || 5);
+          setEvalBingeFactor(data.evaluation.bingeFactor || 5);
           setEmotionalImpact(data.evaluation.emotionalImpact || 'Keine');
+          setComments(data.evaluation.comments || '');
         }
       }
       setLoading(false);
     });
   }, [user, mediaId]);
+
+  const handleDelete = async () => {
+    if (!user || !window.confirm('Möchtest du dieses Werk wirklich aus deiner Liste löschen?')) return;
+    setSaving(true);
+    await deleteTrackingData(user.uid, mediaId);
+    setSaving(false);
+    if (onSaved) onSaved(); // Close the form
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -163,9 +206,14 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       coverImage,
       type,
       status,
+      adaptationScores: readAdaptation ? adaptationScores : undefined,
+      malSynced,
       classification: {
         genres,
         tags,
+        secondaryTags,
+        characterTropes,
+        demography,
         length: lengthStr,
         romanceLevel,
         confessionTiming,
@@ -174,22 +222,19 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         wholesomeLewdScale,
         comedySeriousScale,
         actionDialogScale,
-        pacingScale,
-        summary: ''
+        pacingScale
       },
       evaluation: {
-        story: evalStory,
-        characters: evalCharacters,
-        setting: evalSetting,
-        supportingCast: evalSupportingCast,
-        romance: evalRomance,
+        plotAndStory: evalPlotAndStory,
+        castAndCharacters: evalCastAndCharacters,
+        artstyleAndAnimation: evalArtstyleAndAnimation,
+        audioAndMusic: evalAudioAndMusic,
         ending: evalEnding,
-        animation: evalAnimation,
-        artstyle: evalArtstyle,
-        rewatchValue: evalRewatch,
-        immersion: evalImmersion,
+        romanceAndChemistry: evalRomanceAndChemistry,
+        bingeFactor: evalBingeFactor,
         emotionalImpact,
-        overallScore: Number(overallScore)
+        overallScore: Number(overallScore),
+        comments
       },
       updatedAt: Date.now()
     };
@@ -213,6 +258,9 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
     }
     
     setSaving(false);
+    if (onSaved) {
+      onSaved();
+    }
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -259,6 +307,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
                   label="Status des Pendants"
                   onChange={(e) => setCounterpartStatus(e.target.value as any)}
                 >
+                  <MenuItem value="NONE">Nicht geplant</MenuItem>
                   <MenuItem value="PLANNING">Geplant</MenuItem>
                   <MenuItem value="CURRENT">Aktuell</MenuItem>
                   <MenuItem value="COMPLETED">Abgeschlossen</MenuItem>
@@ -336,7 +385,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       {/* TAB 2: Klassifizierung */}
       <CustomTabPanel value={tabIndex} index={1}>
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
-          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Basis-Daten</Typography>
+          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Basis-Daten & Demografie</Typography>
           <FormControl fullWidth sx={{ mt: 1, mb: 3 }}>
             <InputLabel>Genres</InputLabel>
             <Select
@@ -346,50 +395,86 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
               input={<OutlinedInput label="Genres" />}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => (
-                    <Chip key={value} label={value} size="small" />
-                  ))}
+                  {selected.map((value) => <Chip key={value} label={value} size="small" />)}
                 </Box>
               )}
             >
-              {GENRES_LIST.map((name) => (
-                <MenuItem key={name} value={name}>{name}</MenuItem>
-              ))}
+              {GENRES_LIST.map((name) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
             </Select>
           </FormControl>
+          
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel>Demografie</InputLabel>
+            <Select value={demography} label="Demografie" onChange={(e) => setDemography(e.target.value)}>
+              {DEMOGRAPHICS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
+            </Select>
+          </FormControl>
+        </Paper>
 
-          <FormControl fullWidth sx={{ mb: 1 }}>
-            <InputLabel>Tags & Tropes</InputLabel>
+        <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
+          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Tags & Tropes</Typography>
+          <FormControl fullWidth sx={{ mb: 3, mt: 1 }}>
+            <InputLabel>Main Tags & Tropes</InputLabel>
             <Select
               multiple
               value={tags}
               onChange={(e) => setTags(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
-              input={<OutlinedInput label="Tags & Tropes" />}
+              input={<OutlinedInput label="Main Tags & Tropes" />}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => (
-                    <Chip key={value} label={value} size="small" color="secondary" />
-                  ))}
+                  {selected.map((value) => <Chip key={value} label={value} size="small" color="primary" />)}
                 </Box>
               )}
             >
-              {TAGS_LIST.map((name) => (
-                <MenuItem key={name} value={name}>{name}</MenuItem>
-              ))}
+              {TAGS_LIST.map((name) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel>Secondary Tags & Tropes</InputLabel>
+            <Select
+              multiple
+              value={secondaryTags}
+              onChange={(e) => setSecondaryTags(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+              input={<OutlinedInput label="Secondary Tags & Tropes" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => <Chip key={value} label={value} size="small" color="secondary" />)}
+                </Box>
+              )}
+            >
+              {TAGS_LIST.map((name) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth sx={{ mb: 1 }}>
+            <InputLabel>Charakter-Tropes</InputLabel>
+            <Select
+              multiple
+              value={characterTropes}
+              onChange={(e) => setCharacterTropes(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+              input={<OutlinedInput label="Charakter-Tropes" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => <Chip key={value} label={value} size="small" color="success" />)}
+                </Box>
+              )}
+            >
+              {CHAR_TROPES.map((name) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
             </Select>
           </FormControl>
         </Paper>
 
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
           <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Romance-Dynamik</Typography>
-          <FormControl fullWidth sx={{ mb: romanceLevel !== 'None' ? 3 : 1, mt: 1 }}>
+          <FormControl fullWidth sx={{ mb: romanceLevel !== 'Keine' ? 3 : 1, mt: 1 }}>
             <InputLabel>Romance Level</InputLabel>
             <Select value={romanceLevel} label="Romance Level" onChange={(e) => setRomanceLevel(e.target.value)}>
               {ROMANCE_LEVELS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
             </Select>
           </FormControl>
           
-          {romanceLevel !== 'None' && (
+          {romanceLevel !== 'Keine' && (
             <>
               <FormControl fullWidth sx={{ mb: 3 }}>
                 <InputLabel>Confession Timing</InputLabel>
@@ -405,7 +490,17 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
               </FormControl>
               <FormControl fullWidth sx={{ mb: 1 }}>
                 <InputLabel>Beziehungs-Dynamik</InputLabel>
-                <Select value={relationshipDynamics} label="Beziehungs-Dynamik" onChange={(e) => setRelationshipDynamics(e.target.value)}>
+                <Select 
+                  multiple
+                  value={relationshipDynamics} 
+                  onChange={(e) => setRelationshipDynamics(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                  input={<OutlinedInput label="Beziehungs-Dynamik" />}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((value) => <Chip key={value} label={value} size="small" color="warning" />)}
+                    </Box>
+                  )}
+                >
                   {RELATIONSHIP_DYNAMICS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
                 </Select>
               </FormControl>
@@ -432,52 +527,66 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       {/* TAB 3: Qualität */}
       <CustomTabPanel value={tabIndex} index={2}>
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
-          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Säule 1: Narrative (Story & World)</Typography>
-          <Typography gutterBottom sx={{ mt: 1 }}>Story & Plot-Struktur (1-10)</Typography>
-          <Slider value={evalStory} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalStory(val as number)} />
+          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Kernelemente (1-10)</Typography>
+          
+          <Typography gutterBottom sx={{ mt: 1 }}>Narrative Tiefe & Plot-Struktur</Typography>
+          <Slider value={evalPlotAndStory} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalPlotAndStory(val as number)} />
 
-          <Typography gutterBottom sx={{ mt: 2 }}>Setting / World-Building (1-10)</Typography>
-          <Slider value={evalSetting} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalSetting(val as number)} />
+          <Typography gutterBottom sx={{ mt: 2 }}>Cast & Charakterentwicklung</Typography>
+          <Slider value={evalCastAndCharacters} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalCastAndCharacters(val as number)} />
 
-          <Typography gutterBottom sx={{ mt: 2 }}>Finale & Auflösung (Ending) (1-10)</Typography>
-          <Slider value={evalEnding} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalEnding(val as number)} />
+          {status !== 'CURRENT' && (
+            <>
+              <Typography gutterBottom sx={{ mt: 2 }}>Finale & Auflösung (Ending)</Typography>
+              <Slider value={evalEnding} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalEnding(val as number)} />
+            </>
+          )}
+
+          {romanceLevel !== 'Keine' && romanceLevel !== 'Angedeutet' && (
+            <>
+              <Typography gutterBottom sx={{ mt: 2 }}>Romance & Chemie</Typography>
+              <Slider value={evalRomanceAndChemistry} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalRomanceAndChemistry(val as number)} />
+            </>
+          )}
         </Paper>
 
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
-          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Säule 2: Cast & Chemie</Typography>
-          <Typography gutterBottom sx={{ mt: 1 }}>Hauptcharaktere & Entwicklung (1-10)</Typography>
-          <Slider value={evalCharacters} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalCharacters(val as number)} />
+          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Produktion & Suchtfaktor (1-10)</Typography>
+          
+          <Typography gutterBottom sx={{ mt: 1 }}>Zeichenstil / Animation</Typography>
+          <Slider value={evalArtstyleAndAnimation} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalArtstyleAndAnimation(val as number)} />
 
-          <Typography gutterBottom sx={{ mt: 2 }}>Nebencharaktere (Supporting Cast) (1-10)</Typography>
-          <Slider value={evalSupportingCast} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalSupportingCast(val as number)} />
+          {type === 'ANIME' && (
+            <>
+              <Typography gutterBottom sx={{ mt: 2 }}>Soundtrack / Voice Acting</Typography>
+              <Slider value={evalAudioAndMusic} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalAudioAndMusic(val as number)} />
+            </>
+          )}
 
-          <Typography gutterBottom sx={{ mt: 2 }}>Romance & Chemie (1-10)</Typography>
-          <Slider value={evalRomance} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalRomance(val as number)} />
+          <Typography gutterBottom sx={{ mt: 2 }}>Motivation zu gucken / Binge-Faktor</Typography>
+          <Slider value={evalBingeFactor} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalBingeFactor(val as number)} />
         </Paper>
 
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
-          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Säule 3: Produktion & Kunst</Typography>
-          <Typography gutterBottom sx={{ mt: 1 }}>Animationsqualität (1-10)</Typography>
-          <Slider value={evalAnimation} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalAnimation(val as number)} />
-
-          <Typography gutterBottom sx={{ mt: 2 }}>Artstyle / Zeichenstil (1-10)</Typography>
-          <Slider value={evalArtstyle} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalArtstyle(val as number)} />
-        </Paper>
-
-        <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
-          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Säule 4: Gesamterlebnis</Typography>
-          <Typography gutterBottom sx={{ mt: 1 }}>Immersion (Tiefe des Eintauchens) (1-10)</Typography>
-          <Slider value={evalImmersion} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalImmersion(val as number)} />
-
-          <Typography gutterBottom sx={{ mt: 2 }}>Re-Watch / Re-Read Value (1-10)</Typography>
-          <Slider value={evalRewatch} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalRewatch(val as number)} />
-
-          <FormControl fullWidth sx={{ mt: 3, mb: 1 }}>
+          <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Emotionale Resonanz & Review</Typography>
+          
+          <FormControl fullWidth sx={{ mt: 1, mb: 3 }}>
             <InputLabel>Ausgelöste Gefühle</InputLabel>
             <Select value={emotionalImpact} label="Ausgelöste Gefühle" onChange={(e) => setEmotionalImpact(e.target.value)}>
               {EMOTIONAL_IMPACTS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
             </Select>
           </FormControl>
+
+          <TextField
+            fullWidth
+            label="Persönliches Review / Notizen"
+            multiline
+            rows={4}
+            value={comments}
+            onChange={(e) => setComments(e.target.value)}
+            placeholder="Was hat dir besonders gut gefallen? Was war enttäuschend?"
+            variant="outlined"
+          />
         </Paper>
 
         <Box sx={{ p: 2, bgcolor: 'primary.main', color: '#FFFFFF', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -486,17 +595,38 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         </Box>
       </CustomTabPanel>
 
-      <Button
-        variant="contained"
-        color="secondary"
-        fullWidth
-        size="large"
-        sx={{ mt: 4, py: 1.5, fontWeight: 'bold', borderRadius: '100px' }}
-        onClick={handleSave}
-        disabled={saving}
-      >
-        {saving ? <CircularProgress size={24} color="inherit" /> : 'Alles Speichern'}
-      </Button>
+      <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
+        <Checkbox 
+          checked={malSynced} 
+          onChange={(e) => setMalSynced(e.target.checked)} 
+          color="primary"
+        />
+        <Typography variant="body2">Auf MyAnimeList/AniList neu bewertet?</Typography>
+      </Box>
+
+      <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+        <Button
+          variant="outlined"
+          color="error"
+          size="large"
+          sx={{ py: 1.5, fontWeight: 'bold', borderRadius: '100px', minWidth: 120 }}
+          onClick={handleDelete}
+          disabled={saving}
+        >
+          Löschen
+        </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          fullWidth
+          size="large"
+          sx={{ py: 1.5, fontWeight: 'bold', borderRadius: '100px' }}
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? <CircularProgress size={24} color="inherit" /> : 'Alles Speichern'}
+        </Button>
+      </Box>
     </Box>
   );
 }

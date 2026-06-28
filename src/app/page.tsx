@@ -6,6 +6,7 @@ import AuthUI from '@/components/Auth/AuthUI';
 import AniListSearch from '@/components/Search/AniListSearch';
 import MediaDetail from '@/components/Media/MediaDetail';
 import DiscoveryDialog from '@/components/Discovery/DiscoveryDialog';
+import CompareModal from '@/components/Media/CompareModal';
 import dynamic from 'next/dynamic';
 
 const ConstellationMap = dynamic(() => import('@/components/Map/ConstellationMap'), { 
@@ -30,7 +31,10 @@ export default function Home() {
   
   const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false);
   const [recommendations, setRecommendations] = useState<AniListMedia[]>([]);
-  const [mapFilter, setMapFilter] = useState<'GENRES' | 'ROMANCE' | 'RATING' | 'ALL'>('ALL');
+  const [mapFilter, setMapFilter] = useState<'GENRES' | 'ROMANCE' | 'RATING' | 'ALL' | 'SOURCE'>('ALL');
+
+  const [isCompareMode, setIsCompareMode] = useState(false);
+  const [compareNodes, setCompareNodes] = useState<number[]>([]);
 
   const fetchTrackingData = async () => {
     if (user) {
@@ -61,10 +65,26 @@ export default function Home() {
     <Box sx={{ height: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
       <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-            AniConstellation
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+              AniConstellation
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+              {trackingData.filter(d => d.type === 'ANIME').length} Anime • {trackingData.filter(d => d.type === 'MANGA').length} Manga
+            </Typography>
+          </Box>
           <Box>
+            <Button 
+              variant={isCompareMode ? "contained" : "outlined"}
+              color="primary"
+              onClick={() => {
+                setIsCompareMode(!isCompareMode);
+                setCompareNodes([]);
+              }}
+              sx={{ mr: 2, borderRadius: '100px' }}
+            >
+              {isCompareMode ? 'Vergleich Beenden' : 'Vergleichen'}
+            </Button>
             <Button 
               variant="contained" 
               color="secondary" 
@@ -142,10 +162,35 @@ export default function Home() {
               <ConstellationMap 
                 trackingData={trackingData} 
                 recommendations={recommendations}
-                onNodeClick={(id) => setSelectedMediaId(id)} 
+                onNodeClick={(id) => {
+                  if (isCompareMode) {
+                    const newNodes = [...compareNodes, id];
+                    setCompareNodes(newNodes);
+                  } else {
+                    setSelectedMediaId(id);
+                  }
+                }} 
                 filterBy={mapFilter}
               />
             )}
+
+            {isCompareMode && (
+              <Paper elevation={4} sx={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 10, p: 2, borderRadius: 2, bgcolor: 'primary.main', color: '#fff' }}>
+                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                  {compareNodes.length === 0 ? "Klicke auf das erste Werk für den Vergleich" : "Klicke auf das zweite Werk"}
+                </Typography>
+              </Paper>
+            )}
+
+            <CompareModal 
+              open={compareNodes.length === 2} 
+              mediaIds={compareNodes} 
+              onClose={() => {
+                setIsCompareMode(false);
+                setCompareNodes([]);
+                fetchTrackingData();
+              }} 
+            />
           </Box>
         )}
 

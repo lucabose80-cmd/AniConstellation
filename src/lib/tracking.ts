@@ -1,12 +1,12 @@
 import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 export interface TrackingData {
   mediaId: number;
   title: string;
   coverImage: string;
   type: 'ANIME' | 'MANGA';
-  status: 'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED';
+  status: 'PLANNING' | 'CURRENT' | 'COMPLETED' | 'DROPPED' | 'NONE';
   adaptationScores?: {
     story: number;
     pacing: number;
@@ -14,31 +14,32 @@ export interface TrackingData {
   classification?: {
     genres?: string[];
     tags?: string[];
+    secondaryTags?: string[];
+    characterTropes?: string[];
+    demography?: string;
     length?: string;
     romanceLevel?: string;
     confessionTiming?: string;
     intimacyLevel?: string;
-    relationshipDynamics?: string;
+    relationshipDynamics?: string | string[];
     wholesomeLewdScale?: number;
     comedySeriousScale?: number;
     actionDialogScale?: number;
     pacingScale?: number;
     summary?: string;
   };
+  malSynced?: boolean;
   evaluation?: {
-    story?: number;
-    characters?: number;
-    setting?: number;
-    animation?: number;
-    artstyle?: number;
-    romance?: number;
+    plotAndStory?: number;
+    castAndCharacters?: number;
+    artstyleAndAnimation?: number;
+    audioAndMusic?: number;
     ending?: number;
-    supportingCast?: number;
-    antagonist?: number;
-    rewatchValue?: number;
-    immersion?: number;
+    romanceAndChemistry?: number;
+    bingeFactor?: number;
     emotionalImpact?: string;
     overallScore?: number;
+    comments?: string;
   };
   updatedAt: number;
 }
@@ -49,6 +50,11 @@ export async function saveTrackingData(userId: string, data: TrackingData) {
     ...data,
     updatedAt: Date.now(),
   }, { merge: true });
+}
+
+export async function deleteTrackingData(userId: string, mediaId: number) {
+  const docRef = doc(db, `users/${userId}/trackedMedia`, mediaId.toString());
+  await deleteDoc(docRef);
 }
 
 export async function getTrackingData(userId: string, mediaId: number): Promise<TrackingData | null> {

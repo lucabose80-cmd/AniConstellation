@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Card, CardContent, CardMedia, Typography, CircularProgress, CardActionArea, InputAdornment, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, TextField, Card, CardContent, CardMedia, Typography, CircularProgress, CardActionArea, InputAdornment, ToggleButton, ToggleButtonGroup, Chip } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { searchMedia, AniListMedia } from '@/lib/anilist';
 
@@ -85,9 +85,17 @@ export default function AniListSearch({ onSelect }: AniListSearchProps) {
                   <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }} noWrap>
                     {media.title.english || media.title.romaji}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {media.type} • {media.status}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                    <Chip 
+                      label={media.type} 
+                      size="small" 
+                      color={media.type === 'ANIME' ? 'primary' : 'secondary'} 
+                      sx={{ fontWeight: 'bold', fontSize: '0.7rem', height: 20 }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      {media.status}
+                    </Typography>
+                  </Box>
                 </CardContent>
               </CardActionArea>
             </Card>
