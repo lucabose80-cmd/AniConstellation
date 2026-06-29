@@ -326,9 +326,9 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
       
       {/* Layer 1: Distant Nebula (moves very slowly) */}
       <Box ref={bgLayer1} sx={{ 
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.6, pointerEvents: 'none', 
-        backgroundImage: 'radial-gradient(circle at 400px 400px, rgba(140, 60, 220, 0.4) 0%, transparent 600px), radial-gradient(circle at 1400px 1200px, rgba(60, 140, 220, 0.3) 0%, transparent 800px)', 
-        backgroundSize: '2000px 2000px',
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.8, pointerEvents: 'none', 
+        backgroundImage: 'radial-gradient(circle at 1000px 1000px, rgba(140, 60, 220, 0.25) 0%, rgba(140, 60, 220, 0) 800px), radial-gradient(circle at 2200px 2000px, rgba(60, 140, 220, 0.2) 0%, rgba(60, 140, 220, 0) 700px), radial-gradient(circle at 400px 2500px, rgba(180, 80, 150, 0.15) 0%, rgba(180, 80, 150, 0) 600px)', 
+        backgroundSize: '3000px 3000px',
       }} />
 
       {/* Layer 2: Small distant stars (moves slowly) */}
