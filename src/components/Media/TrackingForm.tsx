@@ -106,9 +106,9 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
     let maxBase = 0;
     let currentScore = 0;
     
-    currentScore += evalPlotAndStory * 2.5; maxBase += 25;
+    currentScore += evalPlotAndStory * 2.0; maxBase += 20;
     currentScore += evalCastAndCharacters * 2.0; maxBase += 20;
-    currentScore += evalSideCharacters * 0.5; maxBase += 5;
+    currentScore += evalSideCharacters * 1.0; maxBase += 10;
     currentScore += evalArtstyleAndAnimation * 1.5; maxBase += 15;
     
     if (type === 'ANIME') {
@@ -118,14 +118,16 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       }
     }
     
-    currentScore += evalBingeFactor * 1.5; maxBase += 15;
+    currentScore += evalBingeFactor * 1.0; maxBase += 10;
     
     if (status !== 'CURRENT') {
-      currentScore += evalEnding * 1.0; maxBase += 10;
+      currentScore += evalEnding * 1.5; maxBase += 15;
     }
 
-    if (romanceLevel !== 'Keine' && romanceLevel !== 'Angedeutet') {
+    if (romanceLevel === 'Subplot') {
       currentScore += evalRomanceAndChemistry * 1.0; maxBase += 10;
+    } else if (romanceLevel === 'Hauptfokus') {
+      currentScore += evalRomanceAndChemistry * 2.0; maxBase += 20;
     }
     
     let finalScore = (currentScore / maxBase) * 10.0;
