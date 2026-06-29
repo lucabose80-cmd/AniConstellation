@@ -13,6 +13,7 @@ interface NodeData {
   val: number;
   data?: TrackingData;
   isRecommendation?: boolean;
+  type?: string;
   fx?: number;
   fy?: number;
 }
@@ -80,6 +81,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
         img: rec.coverImage.large,
         val: 8,
         isRecommendation: true,
+        type: rec.type,
         fx: centerX + radius * Math.cos(angle),
         fy: centerY + radius * Math.sin(angle)
       });
@@ -248,7 +250,9 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     ctx.stroke();
 
     // Draw Score Badge Below Star
-    const label = node.isRecommendation ? 'NEU' : `${node.val.toFixed(1)}`;
+    const typeIndicator = node.data?.type === 'MANGA' || node.type === 'MANGA' ? 'M' : 'A';
+    const scoreText = node.isRecommendation ? 'NEU' : `${node.val.toFixed(1)}`;
+    const label = `${typeIndicator} | ${scoreText}`;
     const fontSize = Math.max(8, size * 0.9);
     ctx.font = `bold ${fontSize}px Inter, sans-serif`;
     const textWidth = ctx.measureText(label).width;
@@ -350,6 +354,9 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           )}
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }} noWrap>
             {hoverNode.name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+            {hoverNode.data?.type === 'MANGA' || hoverNode.type === 'MANGA' ? 'Manga' : 'Anime'}
           </Typography>
           <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
             Score: {hoverNode.val} / 10
