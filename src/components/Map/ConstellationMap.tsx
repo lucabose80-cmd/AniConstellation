@@ -259,9 +259,8 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     ctx.stroke();
 
     // Draw Score Badge Below Star
-    const typeIndicator = node.data?.type === 'MANGA' || node.type === 'MANGA' ? 'M' : 'A';
     const scoreText = node.isRecommendation ? 'NEU' : `${node.val.toFixed(1)}`;
-    const label = `${typeIndicator} | ${scoreText}`;
+    const label = scoreText;
     const fontSize = Math.max(8, size * 0.9);
     ctx.font = `bold ${fontSize}px Inter, sans-serif`;
     const textWidth = ctx.measureText(label).width;
@@ -403,6 +402,11 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', mb: 0.5 }}>
             {hoverNode.data?.type === 'MANGA' || hoverNode.type === 'MANGA' ? 'Manga' : 'Anime'}
           </Typography>
+          {!hoverNode.isRecommendation && hoverNode.data && (
+            <Typography variant="body2" sx={{ mb: 0.5, color: hoverNode.data.malSynced ? 'success.main' : 'text.disabled' }}>
+              MAL / AniList: {hoverNode.data.malSynced ? 'Bewertet' : 'Nicht bewertet'}
+            </Typography>
+          )}
           <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
             Score: {hoverNode.val} / 10
           </Typography>

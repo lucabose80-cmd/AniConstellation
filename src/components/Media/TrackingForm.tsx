@@ -96,8 +96,8 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
   const [comments, setComments] = useState<string>('');
 
   const EMOTIONAL_IMPACTS = ['Keine', 'Leicht', 'Mitgenommen', 'Tränen nah', 'Tränen ausgelöst'];
-  const RELATIONSHIP_DYNAMICS = ['Enemies to Lovers', 'Childhood Friends', 'Slow Burn', 'Harem', 'Love Triangle', 'Arranged Marriage', 'Student/Teacher', 'Rivals', 'Andere'];
-  const CHAR_TROPES = ['Protag ist unbeliebt', 'Protag ist beliebt', 'Mangelndes Selbstwertgefühl', 'Overpowered MC', 'Tsundere', 'Yandere', 'Kuudere', 'Dandere', 'Chuunibyou'];
+  const RELATIONSHIP_DYNAMICS = ['Keine', 'Schüler', 'Erwachsene', 'Enemies to Lovers', 'Childhood Friends', 'Slow Burn', 'Harem', 'Love Triangle', 'Arranged Marriage', 'Student/Teacher', 'Rivals', 'Andere'];
+  const CHAR_TROPES = ['Gyaru', 'Deredere', 'Schweigsam', 'Protag ist unbeliebt', 'Protag ist beliebt', 'Mangelndes Selbstwertgefühl', 'Overpowered MC', 'Tsundere', 'Yandere', 'Kuudere', 'Dandere', 'Chuunibyou'];
   const DEMOGRAPHICS = ['Shounen', 'Seinen', 'Shoujo', 'Josei', 'Kids', 'N/A'];
   const TAGS_LIST = ['Time Travel', 'Isekai', 'School Life', 'Mecha', 'Magic', 'Supernatural', 'Psychological', 'Cyberpunk', 'Post-Apocalyptic', 'Slice of Life', 'Mystery', 'Thriller', 'Historical', 'Military', 'Sports', 'Music', 'CGDCT', 'Found Family', 'Revenge', 'Coming of Age', 'Death Game', 'Gore', 'Dark Fantasy'];
 
@@ -170,6 +170,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
           let parsedDynamics: string[] = [];
           if (typeof dynamics === 'string') parsedDynamics = [dynamics];
           else if (Array.isArray(dynamics)) parsedDynamics = dynamics;
+          if (parsedDynamics.length === 0) parsedDynamics = ['Keine'];
           setRelationshipDynamics(parsedDynamics);
           
           setWholesomeLewdScale(data.classification.wholesomeLewdScale || 5);
@@ -423,7 +424,11 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
             <Select
               multiple
               value={tags}
-              onChange={(e) => setTags(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+              onChange={(e) => {
+                const val = typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value;
+                setTags(val);
+                setSecondaryTags(prev => prev.filter(t => !val.includes(t)));
+              }}
               input={<OutlinedInput label="Main Tags & Tropes" />}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -440,7 +445,11 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
             <Select
               multiple
               value={secondaryTags}
-              onChange={(e) => setSecondaryTags(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+              onChange={(e) => {
+                const val = typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value;
+                setSecondaryTags(val);
+                setTags(prev => prev.filter(t => !val.includes(t)));
+              }}
               input={<OutlinedInput label="Secondary Tags & Tropes" />}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -498,7 +507,19 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
                 <Select 
                   multiple
                   value={relationshipDynamics} 
-                  onChange={(e) => setRelationshipDynamics(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                  onChange={(e) => {
+                    let val = typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value;
+                    if (relationshipDynamics.includes('Keine') && val.length > 1 && val.includes('Keine')) {
+                      val = val.filter((v: string) => v !== 'Keine');
+                    }
+                    if (!relationshipDynamics.includes('Keine') && val.includes('Keine')) {
+                      val = ['Keine'];
+                    }
+                    if (val.length === 0) {
+                      val = ['Keine'];
+                    }
+                    setRelationshipDynamics(val);
+                  }}
                   input={<OutlinedInput label="Beziehungs-Dynamik" />}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -534,7 +555,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
           <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Kernelemente (1-10)</Typography>
           
-          <Typography gutterBottom sx={{ mt: 1 }}>Narrative Tiefe & Plot-Struktur</Typography>
+          <Typography gutterBottom sx={{ mt: 1 }}>Geschichte</Typography>
           <Slider value={evalPlotAndStory} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalPlotAndStory(val as number)} />
 
           <Typography gutterBottom sx={{ mt: 2 }}>Cast (Hauptcharaktere)</Typography>
