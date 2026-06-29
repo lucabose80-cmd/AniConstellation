@@ -22,7 +22,7 @@ interface LinkData {
   source: string;
   target: string;
   label?: string;
-  isCounterpart?: boolean;
+  linkType: 'ADAPTATION' | 'FRANCHISE' | 'THEMATIC';
 }
 
 interface ConstellationMapProps {
@@ -108,7 +108,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
             source: regularNodes[i].id,
             target: regularNodes[j].id,
             label: isAdaptation ? 'Adaptation' : 'Franchise / Serie',
-            isCounterpart: true 
+            linkType: isAdaptation ? 'ADAPTATION' : 'FRANCHISE'
           });
           continue; 
         }
@@ -207,7 +207,7 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     // Combine finalLinks with the remaining simLinks
     simLinks.forEach(link => {
       if (!linksToRemove.has(link)) {
-        finalLinks.push({ source: link.source, target: link.target, label: link.label });
+        finalLinks.push({ source: link.source, target: link.target, label: link.label, linkType: 'THEMATIC' });
       }
     });
 
@@ -216,36 +216,41 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
 
   useEffect(() => {
     if (fgRef.current) {
-      fgRef.current.d3Force('charge').strength(-500); // Mehr Platz zwischen den Nodes
-      fgRef.current.d3Force('link').distance((link: any) => link.isCounterpart ? 30 : 100); // Franchise links closer
+      fgRef.current.d3Force('charge').strength(-600); // Mehr Platz zwischen den Nodes
+      fgRef.current.d3Force('link').distance((link: any) => {
+        if (link.linkType === 'ADAPTATION') return 10;
+        if (link.linkType === 'FRANCHISE') return 40;
+        return 180; // THEMATIC far apart
+      });
       fgRef.current.d3ReheatSimulation();
     }
   }, [graphData]);
 
   const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
     const size = Math.max(3, node.val);
+    const isManga = node.data?.type === 'MANGA' || node.type === 'MANGA';
+    
+    // Base Colors
+    const colorFill = isManga ? '#00E5FF' : '#FFD700';
+    const colorStroke = isManga ? '#006064' : '#5D4037';
     
     // Draw Glow
-    if (node.isRecommendation) {
+    if (node.val > 7 || node.isRecommendation) {
       ctx.beginPath();
-      ctx.arc(node.x, node.y, size * 2.2, 0, 2 * Math.PI, false);
-      ctx.fillStyle = `rgba(255, 215, 0, 0.4)`; // Gold glow
-      ctx.fill();
-    } else if (node.val > 7) {
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, size * 2.2, 0, 2 * Math.PI, false);
-      ctx.fillStyle = `rgba(255, 234, 0, ${Math.min(0.6, (node.val - 6) * 0.15)})`;
+      ctx.arc(node.x, node.y, size * 2.5, 0, 2 * Math.PI, false);
+      const intensity = node.isRecommendation ? 0.6 : Math.min(0.6, (node.val - 5) * 0.15);
+      ctx.fillStyle = isManga ? `rgba(0, 229, 255, ${intensity})` : `rgba(255, 215, 0, ${intensity})`;
       ctx.fill();
     }
 
     // Draw Node Base
     ctx.beginPath();
     ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
-    ctx.fillStyle = node.isRecommendation ? '#FFD700' : '#FFEA00';
+    ctx.fillStyle = colorFill;
     ctx.fill();
     
     // Draw stroke
-    ctx.strokeStyle = node.isRecommendation ? '#FFF' : '#381E72';
+    ctx.strokeStyle = node.isRecommendation ? '#FFF' : colorStroke;
     ctx.lineWidth = 1;
     ctx.stroke();
 
@@ -289,23 +294,34 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
     const end = link.target;
     if (typeof start !== 'object' || typeof end !== 'object') return;
 
-    // Line drawing
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.lineTo(end.x, end.y);
-    if (link.isCounterpart) {
-      ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
-      ctx.lineWidth = 1;
+    
+    if (link.linkType === 'ADAPTATION') {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; // Bright energy beam
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([]);
+    } else if (link.linkType === 'FRANCHISE') {
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.7)'; // Solid gold for franchise
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([]);
     } else {
-      ctx.strokeStyle = 'rgba(200, 200, 255, 0.5)';
+      // THEMATIC - Antike Sternenkarte Style
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; // Semi-transparent white
       ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]); // Dashed line
     }
-    ctx.setLineDash([]);
+    
     ctx.stroke();
+    // Reset line dash for next renders just in case
+    ctx.setLineDash([]);
   }, []);
 
   return (
-    <Box ref={containerRef} sx={{ width: '100%', height: '100%', position: 'relative', background: 'radial-gradient(circle at center, #2B1B54 0%, #0F0A1F 100%)' }}>
+    <Box ref={containerRef} sx={{ width: '100%', height: '100%', position: 'relative', background: 'radial-gradient(circle at center, #1B1035 0%, #080414 100%)' }}>
+      {/* Optional: Add some CSS stars for background texture */}
+      <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.3, pointerEvents: 'none', backgroundImage: 'radial-gradient(#FFF 1px, transparent 1px)', backgroundSize: '50px 50px' }} />
       {graphData.nodes.length > 0 ? (
         <ForceGraph2D
           ref={fgRef}
