@@ -36,6 +36,9 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
   const [graphData, setGraphData] = useState<{ nodes: NodeData[], links: LinkData[] }>({ nodes: [], links: [] });
   const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<any>(null);
+  const bgLayer1 = useRef<HTMLDivElement>(null);
+  const bgLayer2 = useRef<HTMLDivElement>(null);
+  const bgLayer3 = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [hoverNode, setHoverNode] = useState<NodeData | null>(null);
 
@@ -319,9 +322,28 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
   }, []);
 
   return (
-    <Box ref={containerRef} sx={{ width: '100%', height: '100%', position: 'relative', background: 'radial-gradient(circle at center, #1B1035 0%, #080414 100%)' }}>
-      {/* Optional: Add some CSS stars for background texture */}
-      <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.3, pointerEvents: 'none', backgroundImage: 'radial-gradient(#FFF 1px, transparent 1px)', backgroundSize: '50px 50px' }} />
+    <Box ref={containerRef} sx={{ width: '100%', height: '100%', position: 'relative', background: 'radial-gradient(circle at center, #1B1035 0%, #080414 100%)', overflow: 'hidden' }}>
+      
+      {/* Layer 1: Distant Nebula (moves very slowly) */}
+      <Box ref={bgLayer1} sx={{ 
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.5, pointerEvents: 'none', 
+        backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(60, 30, 100, 0.4) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(30, 60, 100, 0.3) 0%, transparent 40%)', 
+      }} />
+
+      {/* Layer 2: Small distant stars (moves slowly) */}
+      <Box ref={bgLayer2} sx={{ 
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.3, pointerEvents: 'none', 
+        backgroundImage: 'radial-gradient(1px 1px at 20px 30px, #eee, rgba(0,0,0,0)), radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 50px 160px, #ddd, rgba(0,0,0,0)), radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0))', 
+        backgroundSize: '200px 200px',
+      }} />
+
+      {/* Layer 3: Larger, closer stars (moves faster) */}
+      <Box ref={bgLayer3} sx={{ 
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.5, pointerEvents: 'none', 
+        backgroundImage: 'radial-gradient(1.5px 1.5px at 10px 10px, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 150px 150px, #fff, rgba(0,0,0,0)), radial-gradient(1.5px 1.5px at 80px 120px, #fff, rgba(0,0,0,0))', 
+        backgroundSize: '300px 300px',
+      }} />
+
       {graphData.nodes.length > 0 ? (
         <ForceGraph2D
           ref={fgRef}
@@ -333,6 +355,11 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           nodeRelSize={2}
           onEngineStop={() => fgRef.current?.zoomToFit(400, 50)}
           onNodeHover={(node: any) => setHoverNode(node || null)}
+          onZoom={(transform) => {
+            if (bgLayer1.current) bgLayer1.current.style.backgroundPosition = `${transform.x * 0.1}px ${transform.y * 0.1}px`;
+            if (bgLayer2.current) bgLayer2.current.style.backgroundPosition = `${transform.x * 0.2}px ${transform.y * 0.2}px`;
+            if (bgLayer3.current) bgLayer3.current.style.backgroundPosition = `${transform.x * 0.5}px ${transform.y * 0.5}px`;
+          }}
           linkLabel={(link: any) => link.label ? `<div style="background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 8px; font-family: Inter, sans-serif; font-size: 12px; color: #fff; text-align: center;">${link.label.replace(/\n/g, '<br/>')}</div>` : ''}
           linkHoverPrecision={10}
           onNodeClick={(node: any) => onNodeClick(parseInt(node.id.toString().replace('rec-', '')))}
