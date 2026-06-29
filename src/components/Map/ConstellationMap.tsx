@@ -326,22 +326,23 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
       
       {/* Layer 1: Distant Nebula (moves very slowly) */}
       <Box ref={bgLayer1} sx={{ 
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.5, pointerEvents: 'none', 
-        backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(60, 30, 100, 0.4) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(30, 60, 100, 0.3) 0%, transparent 40%)', 
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.6, pointerEvents: 'none', 
+        backgroundImage: 'radial-gradient(circle at 400px 400px, rgba(140, 60, 220, 0.4) 0%, transparent 600px), radial-gradient(circle at 1400px 1200px, rgba(60, 140, 220, 0.3) 0%, transparent 800px)', 
+        backgroundSize: '2000px 2000px',
       }} />
 
       {/* Layer 2: Small distant stars (moves slowly) */}
       <Box ref={bgLayer2} sx={{ 
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.3, pointerEvents: 'none', 
-        backgroundImage: 'radial-gradient(1px 1px at 20px 30px, #eee, rgba(0,0,0,0)), radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 50px 160px, #ddd, rgba(0,0,0,0)), radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0))', 
-        backgroundSize: '200px 200px',
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.5, pointerEvents: 'none', 
+        backgroundImage: 'radial-gradient(1px 1px at 20px 30px, #eee, transparent), radial-gradient(1px 1px at 40px 70px, #fff, transparent), radial-gradient(1px 1px at 90px 160px, #ddd, transparent), radial-gradient(1px 1px at 150px 40px, #fff, transparent), radial-gradient(1px 1px at 230px 180px, #fff, transparent)', 
+        backgroundSize: '300px 300px',
       }} />
 
       {/* Layer 3: Larger, closer stars (moves faster) */}
       <Box ref={bgLayer3} sx={{ 
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.5, pointerEvents: 'none', 
-        backgroundImage: 'radial-gradient(1.5px 1.5px at 10px 10px, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 150px 150px, #fff, rgba(0,0,0,0)), radial-gradient(1.5px 1.5px at 80px 120px, #fff, rgba(0,0,0,0))', 
-        backgroundSize: '300px 300px',
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.7, pointerEvents: 'none', 
+        backgroundImage: 'radial-gradient(1.5px 1.5px at 10px 10px, #fff, transparent), radial-gradient(2px 2px at 250px 150px, #fff, transparent), radial-gradient(1.5px 1.5px at 180px 320px, #fff, transparent)', 
+        backgroundSize: '400px 400px',
       }} />
 
       {graphData.nodes.length > 0 ? (
