@@ -64,6 +64,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
   const [adaptationScores, setAdaptationScores] = useState({ story: 5, pacing: 5 });
 
   // Classification State
+  const [watchMode, setWatchMode] = useState<string>('');
   const [genres, setGenres] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [secondaryTags, setSecondaryTags] = useState<string[]>([]);
@@ -84,8 +85,10 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
   // Qualitative State (1-10)
   const [evalPlotAndStory, setEvalPlotAndStory] = useState<number>(5);
   const [evalCastAndCharacters, setEvalCastAndCharacters] = useState<number>(5);
+  const [evalSideCharacters, setEvalSideCharacters] = useState<number>(5);
   const [evalArtstyleAndAnimation, setEvalArtstyleAndAnimation] = useState<number>(5);
-  const [evalAudioAndMusic, setEvalAudioAndMusic] = useState<number>(5);
+  const [evalIntroOutro, setEvalIntroOutro] = useState<number>(5);
+  const [evalVoiceActing, setEvalVoiceActing] = useState<number>(5);
   const [evalEnding, setEvalEnding] = useState<number>(5);
   const [evalRomanceAndChemistry, setEvalRomanceAndChemistry] = useState<number>(5);
   const [evalBingeFactor, setEvalBingeFactor] = useState<number>(5);
@@ -100,17 +103,19 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
 
   const calculateOverallScore = () => {
-    // Base Weights (max score sum = 10)
-    // Plot(2.5), Characters(2.5), Art(1.5), Audio(1.0 - nur Anime), Binge(1.5), Ending(1.0)
     let maxBase = 0;
     let currentScore = 0;
     
     currentScore += evalPlotAndStory * 2.5; maxBase += 25;
-    currentScore += evalCastAndCharacters * 2.5; maxBase += 25;
+    currentScore += evalCastAndCharacters * 2.0; maxBase += 20;
+    currentScore += evalSideCharacters * 0.5; maxBase += 5;
     currentScore += evalArtstyleAndAnimation * 1.5; maxBase += 15;
     
     if (type === 'ANIME') {
-      currentScore += evalAudioAndMusic * 1.0; maxBase += 10;
+      currentScore += evalIntroOutro * 0.5; maxBase += 5;
+      if (watchMode === 'DUB') {
+        currentScore += evalVoiceActing * 0.5; maxBase += 5;
+      }
     }
     
     currentScore += evalBingeFactor * 1.5; maxBase += 15;
@@ -154,6 +159,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
           setCharacterTropes(data.classification.characterTropes || []);
           setDemography(data.classification.demography || '');
           setLengthStr(data.classification.length || '');
+          setWatchMode(data.classification.watchMode || '');
           setRomanceLevel(data.classification.romanceLevel || 'Keine');
           setConfessionTiming(data.classification.confessionTiming || 'N/A');
           setIntimacyLevel(data.classification.intimacyLevel || 'None');
@@ -175,8 +181,10 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         if (data.evaluation) {
           setEvalPlotAndStory(data.evaluation.plotAndStory || 5);
           setEvalCastAndCharacters(data.evaluation.castAndCharacters || 5);
+          setEvalSideCharacters(data.evaluation.sideCharacters || 5);
           setEvalArtstyleAndAnimation(data.evaluation.artstyleAndAnimation || 5);
-          setEvalAudioAndMusic(data.evaluation.audioAndMusic || 5);
+          setEvalIntroOutro(data.evaluation.introOutro ?? data.evaluation.audioAndMusic ?? 5);
+          setEvalVoiceActing(data.evaluation.voiceActing || 5);
           setEvalEnding(data.evaluation.ending || 5);
           setEvalRomanceAndChemistry(data.evaluation.romanceAndChemistry || 5);
           setEvalBingeFactor(data.evaluation.bingeFactor || 5);
@@ -215,6 +223,7 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
         characterTropes,
         demography,
         length: lengthStr,
+        watchMode: watchMode as any,
         romanceLevel,
         confessionTiming,
         intimacyLevel,
@@ -227,8 +236,10 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       evaluation: {
         plotAndStory: evalPlotAndStory,
         castAndCharacters: evalCastAndCharacters,
+        sideCharacters: evalSideCharacters,
         artstyleAndAnimation: evalArtstyleAndAnimation,
-        audioAndMusic: evalAudioAndMusic,
+        introOutro: evalIntroOutro,
+        voiceActing: evalVoiceActing,
         ending: evalEnding,
         romanceAndChemistry: evalRomanceAndChemistry,
         bingeFactor: evalBingeFactor,
@@ -361,24 +372,6 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
             </Box>
           )}
 
-          <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.main', color: '#FFFFFF', borderRadius: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>Generierte Klassifizierung:</Typography>
-            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-              {(() => {
-                let summaryStr = '';
-                if (romanceLevel !== 'None' && romanceLevel !== '') {
-                  summaryStr += 'Romantischer ';
-                }
-                const filteredGenres = genres.filter(g => g !== 'Romance');
-                if (filteredGenres.length > 0) {
-                  summaryStr += `${filteredGenres.slice(0, 2).join('-')}-Titel`;
-                } else {
-                  summaryStr += 'Titel';
-                }
-                return summaryStr;
-              })()}
-            </Typography>
-          </Box>
         </Box>
       </CustomTabPanel>
 
@@ -386,6 +379,16 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
       <CustomTabPanel value={tabIndex} index={1}>
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
           <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Basis-Daten & Demografie</Typography>
+          {type === 'ANIME' && (
+            <FormControl fullWidth sx={{ mt: 1, mb: 3 }}>
+              <InputLabel>Sub oder Dub?</InputLabel>
+              <Select value={watchMode} label="Sub oder Dub?" onChange={(e) => setWatchMode(e.target.value)}>
+                <MenuItem value="SUB">Sub (OmU)</MenuItem>
+                <MenuItem value="DUB">Dub (Synchro)</MenuItem>
+                <MenuItem value="BEIDES">Beides</MenuItem>
+              </Select>
+            </FormControl>
+          )}
           <FormControl fullWidth sx={{ mt: 1, mb: 3 }}>
             <InputLabel>Genres</InputLabel>
             <Select
@@ -532,8 +535,11 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
           <Typography gutterBottom sx={{ mt: 1 }}>Narrative Tiefe & Plot-Struktur</Typography>
           <Slider value={evalPlotAndStory} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalPlotAndStory(val as number)} />
 
-          <Typography gutterBottom sx={{ mt: 2 }}>Cast & Charakterentwicklung</Typography>
+          <Typography gutterBottom sx={{ mt: 2 }}>Cast (Hauptcharaktere)</Typography>
           <Slider value={evalCastAndCharacters} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalCastAndCharacters(val as number)} />
+
+          <Typography gutterBottom sx={{ mt: 2 }}>Nebencharaktere</Typography>
+          <Slider value={evalSideCharacters} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalSideCharacters(val as number)} />
 
           {status !== 'CURRENT' && (
             <>
@@ -558,8 +564,14 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
           {type === 'ANIME' && (
             <>
-              <Typography gutterBottom sx={{ mt: 2 }}>Soundtrack / Voice Acting</Typography>
-              <Slider value={evalAudioAndMusic} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalAudioAndMusic(val as number)} />
+              <Typography gutterBottom sx={{ mt: 2 }}>Intro / Outro</Typography>
+              <Slider value={evalIntroOutro} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalIntroOutro(val as number)} />
+              {watchMode === 'DUB' && (
+                <>
+                  <Typography gutterBottom sx={{ mt: 2 }}>Voice Acting</Typography>
+                  <Slider value={evalVoiceActing} min={1} max={10} step={1} marks valueLabelDisplay="auto" onChange={(_, val) => setEvalVoiceActing(val as number)} />
+                </>
+              )}
             </>
           )}
 

@@ -18,6 +18,7 @@ export interface TrackingData {
     characterTropes?: string[];
     demography?: string;
     length?: string;
+    watchMode?: 'SUB' | 'DUB' | 'BEIDES';
     romanceLevel?: string;
     confessionTiming?: string;
     intimacyLevel?: string;
@@ -33,7 +34,10 @@ export interface TrackingData {
     plotAndStory?: number;
     castAndCharacters?: number;
     artstyleAndAnimation?: number;
-    audioAndMusic?: number;
+    audioAndMusic?: number; // legacy
+    introOutro?: number;
+    voiceActing?: number;
+    sideCharacters?: number;
     ending?: number;
     romanceAndChemistry?: number;
     bingeFactor?: number;
