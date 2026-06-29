@@ -4,7 +4,8 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { TrackingData } from '@/lib/tracking';
 import { AniListMedia } from '@/lib/anilist';
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography, Paper, Fab, Tooltip } from '@mui/material';
+import FilterCenterFocusIcon from '@mui/icons-material/FilterCenterFocus';
 
 interface NodeData {
   id: string;
@@ -407,6 +408,21 @@ export default function ConstellationMap({ trackingData, recommendations = [], o
           </Typography>
         </Paper>
       )}
+
+      <Tooltip title="Karte zentrieren" placement="left">
+        <Fab 
+          color="primary" 
+          size="medium" 
+          sx={{ position: 'absolute', bottom: 24, right: 24, zIndex: 10 }}
+          onClick={() => {
+            if (fgRef.current) {
+              fgRef.current.zoomToFit(400, 50);
+            }
+          }}
+        >
+          <FilterCenterFocusIcon />
+        </Fab>
+      </Tooltip>
     </Box>
   );
 }
