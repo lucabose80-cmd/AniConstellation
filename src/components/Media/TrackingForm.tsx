@@ -481,14 +481,14 @@ export default function TrackingForm({ mediaId, title, coverImage, type, hasCoun
 
         <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
           <Typography variant="subtitle1" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>Romance-Dynamik</Typography>
-          <FormControl fullWidth sx={{ mb: romanceLevel !== 'Keine' ? 3 : 1, mt: 1 }}>
+          <FormControl fullWidth sx={{ mb: romanceLevel !== 'Keine' && romanceLevel !== 'Angedeutet' ? 3 : 1, mt: 1 }}>
             <InputLabel>Romance Level</InputLabel>
             <Select value={romanceLevel} label="Romance Level" onChange={(e) => setRomanceLevel(e.target.value)}>
               {ROMANCE_LEVELS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
             </Select>
           </FormControl>
           
-          {romanceLevel !== 'Keine' && (
+          {romanceLevel !== 'Keine' && romanceLevel !== 'Angedeutet' && (
             <>
               <FormControl fullWidth sx={{ mb: 3 }}>
                 <InputLabel>Confession Timing</InputLabel>
